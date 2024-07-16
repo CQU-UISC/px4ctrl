@@ -200,7 +200,7 @@ namespace px4ctrl {
             bool load_config();
 
             //process, main loop
-            clock::time_point last_process_time,last_log_state_time;
+            clock::time_point last_log_state_time;
             bool init_com=true;
             void process();
             void process_l0(controller::ControlCommand&);

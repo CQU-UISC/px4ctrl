@@ -72,6 +72,7 @@ struct ControlParams{
     double Kp,Kv,Ka,Kw;
     double hover_percentage;
     double Ix,Iy,Iz;//TODO
+    bool bodyrates_control;
 };
 
 class LinearControl {
@@ -84,6 +85,7 @@ public:
   bool estimateThrustModel(const Eigen::Vector3d &est_a, const clock::time_point& est_time);
   void resetThrustMapping();
   double thrustMap(const double collective_thrust);
+  double fromQuaternion2yaw( const Eigen::Quaterniond & q );
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 private:

@@ -1,11 +1,11 @@
 {
-    "freq": 10,
+    "freq": 100,
     "l2_takeoff_height": 1.0,
     "l2_idle_disarm_time": 10.0,
     "l2_allow_cmd_ctrl_allow_time": 1000.0,
     "l2_cmd_ctrl_cmd_timeout": 1000.0,
     "l2_takeoff_landing_speed": 0.2,
-    "max_thrust": 0.6,
+    "max_thrust": 1.0,
     "min_thrust": 0.0,
     "max_bodyrate": 3,
     "control_params":{
@@ -15,8 +15,9 @@
         "Kp":1.5,
         "Kv":1.5,
         "Ka":1.5,
-        "Kw":20.0,
-        "hover_percentage": 0.3
+        "Kw":5.0,
+        "hover_percentage": 0.7,
+        "bodyrates_control": true
     },
     "drone_id": 1,
     "gcs_id": 1,

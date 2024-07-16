@@ -1,6 +1,5 @@
 #include "px4ctrl_fsm.h"
 
-#include "Eigen/src/Geometry/Quaternion.h"
 #include "json.hpp"
 #include "mavros_msgs/ExtendedState.h"
 #include "mavros_msgs/State.h"
@@ -155,7 +154,8 @@ bool Px4Ctrl::load_config() {
         json_file["control_params"].contains("Kp") &&
         json_file["control_params"].contains("Kv") &&
         json_file["control_params"].contains("Ka") &&
-        json_file["control_params"].contains("Kw"))) {
+        json_file["control_params"].contains("Kw") &&
+        json_file["control_params"].contains("bodyrates_control"))) {
     spdlog::error("Config file missing key:control_params");
     return false;
   }
@@ -173,7 +173,8 @@ bool Px4Ctrl::load_config() {
       json_file["control_params"]["Ka"].template get<double>();
   params.control_params.Kw =
       json_file["control_params"]["Kw"].template get<double>();
-
+  params.control_params.bodyrates_control =
+      json_file["control_params"]["bodyrates_control"].template get<bool>();
   if (!(json_file["guard_params"].contains("mavros_timeout") &&
         json_file["guard_params"].contains("odom_timeout") &&
         json_file["guard_params"].contains("gcs_timeout") &&
@@ -228,7 +229,7 @@ GuardStatus Px4Ctrl::guard() {
 void Px4Ctrl::stop() { ok = false; }
 
 void Px4Ctrl::run() {
-  int delta_t = int(1000.f / params.freq);
+  int delta_t = int(1000 / params.freq);
   while (ok) {
     process();
     std::this_thread::sleep_for(std::chrono::milliseconds(delta_t));
@@ -259,19 +260,6 @@ void Px4Ctrl::apply_control(const controller::ControlCommand &cmd) {
 void Px4Ctrl::process() {
   // process ros message
   px4_mavros->spin_once();
-
-  // sleep until
-  if (last_process_time.time_since_epoch().count() == 0) {
-    last_process_time = clock::now();
-  } else {
-    std::chrono::milliseconds delta_t =
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            clock::now() - last_process_time);
-    long time_to_sleep = 1000 / params.freq - delta_t.count();
-    if (time_to_sleep > 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(time_to_sleep));
-    }
-  }
 
   // if not recv px4, return
   if (clock::now() - px4_state->state.second > std::chrono::seconds(1)) {
@@ -359,21 +347,21 @@ void Px4Ctrl::process() {
   case GuardStatus::GCS_TIMEOUT:
     // Try land
     logger_ptr->error("GCS timeout, try land");
-    // px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
+    px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     break;
   case GuardStatus::MAVROS_TIMEOUT:
     // Try land&&kill
     logger_ptr->error("Mavros timeout, try land");
-    // px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
+    px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     // px4_mavros->set_arm(false);
     break;
   case GuardStatus::ODOM_TIMEOUT:
     logger_ptr->error("Odom timeout, try land");
-    // px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
+    px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     break;
   case GuardStatus::LOW_VOLTAGE:
     logger_ptr->error("Low voltage, try land");
-    // px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
+    px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     break;
   case GuardStatus::OK:
     // process state and apply control
@@ -397,7 +385,6 @@ void Px4Ctrl::process() {
   // send
   fill_drone_message();
   drone_com->send(drone_message);
-  last_process_time = clock::now();
 }
 
 void Px4Ctrl::fill_drone_message() {
@@ -554,6 +541,7 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
     L1 = L1_UNARMED;
     // reset L2
     L2.reset(L2_IDLE);
+    L2.idle.is_first_time = true;
   }
 
   if (L1.next_state != L1.state) {
@@ -594,7 +582,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       L2.idle.is_first_time = true;
     }
     ctrl_cmd.type = controller::ControlType::BODY_RATES;
-    ctrl_cmd.thrust = 0.04;
+    ctrl_cmd.thrust = 0.1;
     ctrl_cmd.bodyrates = Eigen::Vector3d(0, 0, 0);
     break;
   }
@@ -606,6 +594,11 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       auto &quat = pose.orientation;
       L2.takingoff.start_pos = Eigen::Vector3d(pos.x, pos.y, pos.z);
       L2.takingoff.start_q = Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
+      logger_ptr->info("Taking off from:{} {} {}", L2.takingoff.start_pos.x(),
+                       L2.takingoff.start_pos.y(), L2.takingoff.start_pos.z());
+      logger_ptr->info("Taking off to:{} {} {}", L2.takingoff.start_pos.x(),
+                       L2.takingoff.start_pos.y(),
+                       L2.takingoff.start_pos.z() + params.l2_takeoff_height);
     } else {
       // check if taking off finished
       const auto &pose = px4_state->odom.first->pose.pose;
@@ -618,6 +611,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
 
       if ((cur_pos - des_pos).norm() < 0.1) {
         L2 = L2_HOVERING;
+        logger_ptr->info("Taking off finished");
         break;
       }
     }
@@ -626,10 +620,10 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.q = L2.takingoff.start_q;
     des.p.z() += params.l2_takeoff_height;
     des.v = Eigen::Vector3d(0, 0, params.l2_takeoff_landing_speed);
+    des.yaw = controller->fromQuaternion2yaw(des.q);
 
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
-    estimate_thrust();
     break;
   }
 
@@ -643,11 +637,13 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       auto &quat = pose.orientation;
       L2.hovering.des_pos = Eigen::Vector3d(pos.x, pos.y, pos.z);
       L2.hovering.des_q = Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
+      logger_ptr->info("Hovering at->X:{} Y:{} Z:{}", pos.x, pos.y, pos.z);
     }
 
     controller::DesiredState des;
     des.p = L2.hovering.des_pos;
     des.q = L2.hovering.des_q;
+    des.yaw = controller->fromQuaternion2yaw(des.q);
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
     estimate_thrust();
@@ -673,6 +669,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.p = L2.landing.start_pos;
     des.q = L2.landing.start_q;
     des.v = Eigen::Vector3d(0, 0, -params.l2_takeoff_landing_speed);
+    des.yaw = controller->fromQuaternion2yaw(des.q);
     des.p.z() -= params.l2_takeoff_landing_speed *
                  std::chrono::duration_cast<std::chrono::seconds>(
                      clock::now() - L2.landing.start_time)
@@ -708,7 +705,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       }
     }
 
-    if (landed && px4_state->ext_state.first->landed_state ==
+    if (px4_state->ext_state.first->landed_state ==
                       mavros_msgs::ExtendedState::LANDED_STATE_ON_GROUND) {
       L2 = L2_IDLE;
     }
@@ -742,6 +739,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     controller::DesiredState des;
     des.p = L2.hovering.des_pos;
     des.q = L2.hovering.des_q;
+    des.yaw = controller->fromQuaternion2yaw(des.q);
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
     estimate_thrust();

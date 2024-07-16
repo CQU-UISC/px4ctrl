@@ -10,6 +10,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "px4ctrl_fsm.h"
 #include "px4ctrl_gcs.h"
 #include "px4ctrl_gcs_ros.h"
 #include "px4ctrl_state.h"
@@ -54,7 +55,7 @@ namespace gcs{
             const Drone&  el = elem.second.first;
             const clock::time_point& arrive_time = elem.second.second;
             ImGui::Text("drone_id: %d",el.drone_id);
-            ImGui::Text("px4ctrl_status: %d %d %d",el.px4ctrl_status[0],el.px4ctrl_status[1],el.px4ctrl_status[2]);
+            ImGui::Text("px4ctrl_status: %s %s %s",Px4CtrlStateName[el.px4ctrl_status[0]],Px4CtrlStateName[el.px4ctrl_status[1]],Px4CtrlStateName[el.px4ctrl_status[2]]);
             ImGui::Text("pos: %.2f %.2f %.2f",el.pos[0],el.pos[1],el.pos[2]);
             ImGui::Text("vel: %.2f %.2f %.2f",el.vel[0],el.vel[1],el.vel[2]);
             ImGui::Text("acc: %.2f %.2f %.2f",el.acc[0],el.acc[1],el.acc[2]);

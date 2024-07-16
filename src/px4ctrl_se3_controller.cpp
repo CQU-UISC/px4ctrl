@@ -1,7 +1,9 @@
 #include "px4ctrl_se3_controller.h"
+#include "Eigen/src/Geometry/Quaternion.h"
 #include "px4ctrl_state.h"
 #include <chrono>
 #include <cmath>
+#include <spdlog/spdlog.h>
 
 namespace px4ctrl {
 namespace controller {
@@ -22,8 +24,6 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
   Eigen::Quaterniond quat;
   Eigen::Matrix3d rot;
 
-  acc << imu.linear_acceleration.x, imu.linear_acceleration.y,
-      imu.linear_acceleration.z;
   vel << odom.twist.twist.linear.x, odom.twist.twist.linear.y,
       odom.twist.twist.linear.z;
   pos << odom.pose.pose.position.x, odom.pose.pose.position.y,
@@ -35,10 +35,9 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
 
   err_p = pos - des.p;
   err_v = vel - des.v;
-  err_a = acc - des.a;
 
-  Eigen::Vector3d des_acc = -1 * params.Ka * err_a - params.Kv * err_v -
-                            params.Kp * err_p + params.g * ez;
+  Eigen::Vector3d des_acc =
+      des.a - params.Kv * err_v - params.Kp * err_p + params.g * ez;
 
   double collective_thrust = des_acc.dot(quat * ez);
   ret.thrust = thrustMap(collective_thrust);
@@ -49,11 +48,25 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
   Eigen::Vector3d xb = yb.cross(zb);
   Eigen::Matrix3d des_rot;
   des_rot << xb, yb, zb;
+  const auto &imu_q = imu.orientation;
+  const auto &odom_q = odom.pose.pose.orientation;
 
-  Eigen::Matrix3d err_rot = des_rot.transpose() * rot;
-  Eigen::Vector3d bodyrates =
-      -params.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
-  ret.bodyrates = bodyrates;
+  des_rot =
+      (Eigen::Quaterniond(imu_q.w, imu_q.x, imu_q.y, imu_q.z) *
+       Eigen::Quaterniond(odom_q.w, odom_q.x, odom_q.y, odom_q.z).inverse() *
+       Eigen::Quaterniond(des_rot))
+          .toRotationMatrix();
+
+  if (params.bodyrates_control) {
+    Eigen::Matrix3d err_rot = des_rot.transpose() * rot;
+    Eigen::Vector3d bodyrates =
+        -params.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
+    ret.type = ControlType::BODY_RATES;
+    ret.bodyrates = bodyrates;
+  } else {
+    ret.type = ControlType::ATTITUDE;
+    ret.attitude = Eigen::Quaterniond(des_rot);
+  }
 
   // Used for thrust-accel mapping estimation
   timed_thrust.push(
@@ -62,8 +75,15 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
   while (timed_thrust.size() > 100) {
     timed_thrust.pop();
   }
-  ret.type = ControlType::BODY_RATES;
+
   return ret;
+}
+
+double LinearControl::fromQuaternion2yaw(const Eigen::Quaterniond &q) {
+  double yaw =
+      atan2(2 * (q.x() * q.y() + q.w() * q.z()),
+            q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
+  return yaw;
 }
 
 Eigen::Vector3d LinearControl::vee(const Eigen::Matrix3d &m) {
@@ -78,18 +98,19 @@ Eigen::Vector3d LinearControl::vee(const Eigen::Matrix3d &m) {
   des_acc: desired acceleration in world frame
   return: throttle percentage
 */
-double LinearControl::thrustMap( const double collective_thrust ) {
-    double throttle_percentage( 0.0 );
+double LinearControl::thrustMap(const double collective_thrust) {
+  double throttle_percentage(0.0);
 
-    /* compute throttle, thr2acc has been estimated before */
-    throttle_percentage = collective_thrust / thr2acc;
+  /* compute throttle, thr2acc has been estimated before */
+  throttle_percentage = collective_thrust / thr2acc;
 
-    return throttle_percentage;
+  return throttle_percentage;
 }
 
-bool LinearControl::estimateThrustModel(const Eigen::Vector3d &est_a,const clock::time_point& est_time) {
+bool LinearControl::estimateThrustModel(const Eigen::Vector3d &est_a,
+                                        const clock::time_point &est_time) {
   // clock::time_point t_now = clock::now();
-  const clock::time_point t_now  = est_time;
+  const clock::time_point t_now = est_time;
   while (timed_thrust.size() >= 1) {
     // Choose data before 35~45ms ago
     std::pair<clock::time_point, double> t_t = timed_thrust.front();
@@ -118,7 +139,11 @@ bool LinearControl::estimateThrustModel(const Eigen::Vector3d &est_a,const clock
     /************************************/
     double gamma = 1 / (rho2 + thr * P * thr);
     double K = gamma * P * thr;
-    thr2acc = thr2acc + K * (est_a(2) - thr * thr2acc);
+    thr2acc =
+        thr2acc +
+        K * (est_a(2) -
+             thr * thr2acc); // collective_thrust = g (imu z value),
+                             // collective_thrust/thurst2acc = hover_percentage;
     P = (1 - K * thr) * P / rho2;
 
     return true;

@@ -5,6 +5,9 @@
 # Prerequisites
 *.d
 
+config/log/
+test/*
+
 # Compiled Object files
 *.slo
 *.lo

@@ -68,6 +68,14 @@ namespace px4ctrl {
     bool PX4CTRL_ROS_BRIDGE::set_arm(const bool arm){
         mavros_msgs::CommandBool arm_cmd;
         arm_cmd.request.value = arm;
+        if( px4_state_->state.first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
+            spdlog::error("Not in offboard mode, can't arm");
+            return false;
+        }
+        if( arm==px4_state_->state.first->armed) {
+            spdlog::info("Already in {} mode", arm?"ARM":"DISARM");
+            return true;
+        }
         if (!( px4_arming_client.call( arm_cmd ) && arm_cmd.response.success )){
             if ( arm )
                 spdlog::error( "ARM rejected by PX4!" );
