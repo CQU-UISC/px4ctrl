@@ -1,0 +1,70 @@
+[2024-07-16 12:04:26.039] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:04:26.039] [px4ctrl] [info] state message is nullptr
+[2024-07-16 12:04:26.039] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:04:26.039] [px4ctrl] [info] imu message is nullptr
+[2024-07-16 12:04:26.039] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:04:26.139] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:04:26.139] [px4ctrl] [info] state message is nullptr
+[2024-07-16 12:04:26.139] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:04:26.139] [px4ctrl] [info] imu message is nullptr
+[2024-07-16 12:04:26.139] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:04:26.239] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:04:26.240] [px4ctrl] [info] state message is nullptr
+[2024-07-16 12:04:26.240] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:04:26.240] [px4ctrl] [info] imu message is nullptr
+[2024-07-16 12:04:26.240] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:04:26.340] [px4ctrl] [info] px4 state callback: mode AUTO.LOITER
+[2024-07-16 12:04:26.340] [px4ctrl] [info] px4 state callback: mode AUTO.LOITER
+[2024-07-16 12:04:26.340] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:04:26.340] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:04:26.340] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:04:26.440] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:04:26.440] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:04:26.440] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:04:26.541] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:26.641] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:26.741] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:26.841] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:26.941] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.042] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.142] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.242] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.342] [px4ctrl] [info] px4 state callback: mode AUTO.LOITER
+[2024-07-16 12:04:27.342] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.442] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.543] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.643] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.743] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.843] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:27.944] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.044] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.144] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.245] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.345] [px4ctrl] [info] px4 state callback: mode AUTO.LOITER
+[2024-07-16 12:04:28.345] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.445] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.546] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.646] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.746] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.846] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:28.946] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.047] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.147] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.247] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.347] [px4ctrl] [info] px4 state callback: mode AUTO.LOITER
+[2024-07-16 12:04:29.347] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.448] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.548] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.648] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.749] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.849] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:29.949] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.049] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.150] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.250] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.350] [px4ctrl] [info] px4 state callback: mode AUTO.LOITER
+[2024-07-16 12:04:30.350] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.450] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.550] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.651] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:04:30.685] [px4ctrl] [info] [PX4Ctrl] exit...

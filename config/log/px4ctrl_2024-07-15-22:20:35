@@ -1,0 +1,319 @@
+[2024-07-15 22:20:35.448] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.448] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.458] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.458] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.468] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.468] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.478] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.478] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.488] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.488] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.498] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.499] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.509] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.509] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.519] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.519] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.529] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.529] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.539] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.539] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.549] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.549] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.559] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.559] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.569] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.569] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.580] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.580] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.590] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.590] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.600] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.600] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.610] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.610] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.620] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.620] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.630] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.631] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.641] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.641] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.651] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.651] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.661] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.661] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.671] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.671] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.681] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.681] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.691] [px4ctrl] [info] recv message,type:N11mavros_msgs6State_ISaIvEEE
+[2024-07-15 22:20:35.691] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.691] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.702] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.702] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.702] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.712] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.712] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.722] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.722] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.722] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.732] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.732] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.742] [px4ctrl] [info] recv message,type:N11mavros_msgs6State_ISaIvEEE
+[2024-07-15 22:20:35.743] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.743] [px4ctrl] [info] recv message,type:N11mavros_msgs14ExtendedState_ISaIvEEE
+[2024-07-15 22:20:35.743] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.743] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.753] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.753] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.753] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.763] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.763] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.773] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.773] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.783] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.784] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.784] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.794] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.794] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.794] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.804] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.804] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.814] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.814] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.814] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.824] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.824] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.834] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.834] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.834] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.845] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.845] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.855] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.855] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.855] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.865] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.865] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.875] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.875] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.875] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.885] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.885] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.895] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.895] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.895] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.906] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.906] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.916] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.916] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.916] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.926] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.926] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.936] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.936] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.936] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.946] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.946] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.957] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.957] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.957] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.967] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.967] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.977] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.977] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.977] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.987] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.987] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:35.997] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:35.997] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:35.997] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.008] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.008] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.018] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.018] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.018] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.028] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.028] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.038] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.038] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.038] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.048] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.048] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.058] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.058] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.059] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.069] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.069] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.079] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.079] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.079] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.089] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.089] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.099] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.099] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.099] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.109] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.109] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.120] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.120] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.120] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.130] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.130] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.140] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.140] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.140] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.150] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.150] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.160] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.160] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.160] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.170] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.170] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.181] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.181] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.181] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.191] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.191] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.201] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.201] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.201] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.211] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.211] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.221] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.222] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.222] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.232] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.232] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.242] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.242] [px4ctrl] [info] recv message,type:N11mavros_msgs14ExtendedState_ISaIvEEE
+[2024-07-15 22:20:36.242] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.242] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.252] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.252] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.252] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.263] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.263] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.273] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.273] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.273] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.283] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.283] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.293] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.293] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.293] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.303] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.303] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.313] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.313] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.313] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.324] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.324] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.334] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.334] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.334] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.344] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.344] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.354] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.354] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.354] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.364] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.364] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.374] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.374] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.374] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.385] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.385] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.395] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.395] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.395] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.405] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.405] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.415] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.415] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.415] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.425] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.425] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.435] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.435] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.435] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.446] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.446] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.456] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.456] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.456] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.466] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.466] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.476] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.476] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.476] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.486] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.486] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.496] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.497] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.497] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.507] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.507] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.517] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.517] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.517] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.527] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.527] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.537] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.537] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.537] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.547] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.547] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.557] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.557] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.557] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.568] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.568] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.578] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.578] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.578] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.588] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.588] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.598] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.598] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.598] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.609] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.609] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.619] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.619] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.619] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.629] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.629] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.639] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.639] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.639] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.649] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.649] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.659] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.660] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.660] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.670] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.670] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.680] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.680] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.680] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.690] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.690] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.701] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.701] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.701] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.711] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.711] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.721] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.721] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.721] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.731] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.731] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.741] [px4ctrl] [info] recv message,type:N11mavros_msgs6State_ISaIvEEE
+[2024-07-15 22:20:36.742] [px4ctrl] [info] recv message,type:N11sensor_msgs4Imu_ISaIvEEE
+[2024-07-15 22:20:36.742] [px4ctrl] [info] recv message,type:N11sensor_msgs13BatteryState_ISaIvEEE
+[2024-07-15 22:20:36.742] [px4ctrl] [info] recv message,type:N11mavros_msgs14ExtendedState_ISaIvEEE
+[2024-07-15 22:20:36.742] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.742] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.752] [px4ctrl] [info] Px4 state:
+[2024-07-15 22:20:36.752] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-15 22:20:36.756] [px4ctrl] [info] [PX4Ctrl] exit...

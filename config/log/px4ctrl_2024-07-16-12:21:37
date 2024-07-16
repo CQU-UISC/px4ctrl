@@ -1,0 +1,148 @@
+[2024-07-16 12:21:37.014] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-16 12:21:37.114] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-16 12:21:37.214] [px4ctrl] [info] Waiting for Px4 message
+[2024-07-16 12:21:37.314] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.314] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:21:37.314] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:37.414] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.414] [px4ctrl] [info] ext_state message is nullptr
+[2024-07-16 12:21:37.414] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:37.515] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.515] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:37.615] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.615] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:37.715] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.715] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:37.815] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.815] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:37.915] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:37.915] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:38.016] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:38.016] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:38.116] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:38.116] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:38.216] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:38.216] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:38.316] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:38.316] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:38.416] [px4ctrl] [info] Waiting for All message
+[2024-07-16 12:21:38.416] [px4ctrl] [info] battery message is nullptr
+[2024-07-16 12:21:38.517] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:38.617] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:38.717] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:38.817] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:38.917] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.017] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.118] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.218] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.318] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.418] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.518] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.618] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.719] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.819] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:39.919] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.019] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.120] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.220] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.320] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.420] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.521] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.621] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.721] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.821] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:40.921] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.022] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.122] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.222] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.322] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.422] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.523] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.623] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.723] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.823] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:41.924] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:42.024] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:42.124] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:42.225] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:42.325] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:42.426] [px4ctrl] [info] Waiting for GCS message
+[2024-07-16 12:21:42.526] [px4ctrl] [info] GCS message arrive, begin...
+[2024-07-16 12:22:08.020] [px4ctrl] [info] Enter OFFBOARD accepted by PX4!
+[2024-07-16 12:22:08.421] [px4ctrl] [info] L0 state change:L0_NON_OFFBOARD->L0_OFFBOARD
+[2024-07-16 12:22:10.932] [px4ctrl] [info] Enter AUTO.LAND accepted by PX4!
+[2024-07-16 12:22:11.434] [px4ctrl] [info] L0 state change:L0_OFFBOARD->L0_NON_OFFBOARD
+[2024-07-16 12:22:21.175] [px4ctrl] [info] Enter OFFBOARD accepted by PX4!
+[2024-07-16 12:22:21.376] [px4ctrl] [info] L0 state change:L0_NON_OFFBOARD->L0_OFFBOARD
+[2024-07-16 12:22:27.598] [px4ctrl] [info] Enter AUTO.LAND accepted by PX4!
+[2024-07-16 12:22:28.401] [px4ctrl] [info] L0 state change:L0_OFFBOARD->L0_NON_OFFBOARD
+[2024-07-16 12:22:38.236] [px4ctrl] [info] Enter OFFBOARD accepted by PX4!
+[2024-07-16 12:22:38.437] [px4ctrl] [info] L0 state change:L0_NON_OFFBOARD->L0_OFFBOARD
+[2024-07-16 12:22:41.456] [px4ctrl] [info] L1 state change:L1_UNARMED->L1_ARMED
+[2024-07-16 12:22:46.473] [px4ctrl] [info] L2 state change:L2_IDLE->L2_TAKING_OFF
+[2024-07-16 12:22:52.398] [px4ctrl] [info] L1 state change:L1_ARMED->L1_UNARMED
+[2024-07-16 12:23:14.388] [px4ctrl] [info] L1 state change:L1_UNARMED->L1_ARMED
+[2024-07-16 12:23:24.436] [px4ctrl] [info] L1 state change:L1_ARMED->L1_UNARMED
+[2024-07-16 12:23:25.040] [px4ctrl] [info] Enter AUTO.LAND accepted by PX4!
+[2024-07-16 12:23:25.442] [px4ctrl] [info] L0 state change:L0_OFFBOARD->L0_NON_OFFBOARD
+[2024-07-16 12:23:35.979] [px4ctrl] [info] Enter OFFBOARD accepted by PX4!
+[2024-07-16 12:23:36.381] [px4ctrl] [info] L0 state change:L0_NON_OFFBOARD->L0_OFFBOARD
+[2024-07-16 12:23:40.406] [px4ctrl] [info] L1 state change:L1_UNARMED->L1_ARMED
+[2024-07-16 12:23:45.429] [px4ctrl] [error] Reject! beacuse can not transfer state from L2_TAKING_OFF==>L2_TAKING_OFF
+[2024-07-16 12:23:50.450] [px4ctrl] [info] L1 state change:L1_ARMED->L1_UNARMED
+[2024-07-16 12:24:09.116] [px4ctrl] [info] Enter AUTO.LAND accepted by PX4!
+[2024-07-16 12:24:09.417] [px4ctrl] [info] L0 state change:L0_OFFBOARD->L0_NON_OFFBOARD
+[2024-07-16 12:24:54.668] [px4ctrl] [info] Already in AUTO.LAND mode
+[2024-07-16 12:25:00.089] [px4ctrl] [info] Enter OFFBOARD accepted by PX4!
+[2024-07-16 12:25:00.390] [px4ctrl] [info] L0 state change:L0_NON_OFFBOARD->L0_OFFBOARD
+[2024-07-16 12:25:04.414] [px4ctrl] [info] L1 state change:L1_UNARMED->L1_ARMED
+[2024-07-16 12:25:14.456] [px4ctrl] [info] L1 state change:L1_ARMED->L1_UNARMED
+[2024-07-16 12:25:28.410] [px4ctrl] [info] L1 state change:L1_UNARMED->L1_ARMED
+[2024-07-16 12:25:30.620] [px4ctrl] [error] Reject! beacuse can not transfer state from L2_TAKING_OFF==>L2_TAKING_OFF
+[2024-07-16 12:25:34.034] [px4ctrl] [error] Reject! beacuse can not transfer state from L2_TAKING_OFF==>L2_LANDING
+[2024-07-16 12:25:38.452] [px4ctrl] [info] L1 state change:L1_ARMED->L1_UNARMED
+[2024-07-16 12:25:48.488] [px4ctrl] [info] Enter AUTO.LAND accepted by PX4!
+[2024-07-16 12:25:49.391] [px4ctrl] [info] L0 state change:L0_OFFBOARD->L0_NON_OFFBOARD
+[2024-07-16 12:25:55.710] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:55.810] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:55.911] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.011] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.111] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.211] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.312] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.412] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.512] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.613] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.713] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.813] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:56.913] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.013] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.114] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.214] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.314] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.414] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.514] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.615] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.715] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.815] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:57.915] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.015] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.116] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.216] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.316] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.416] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.516] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.617] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.717] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.817] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:58.917] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.017] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.117] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.218] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.318] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.418] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.518] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.618] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.719] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.819] [px4ctrl] [error] GCS timeout, try land
+[2024-07-16 12:25:59.874] [px4ctrl] [info] [PX4Ctrl] exit...
