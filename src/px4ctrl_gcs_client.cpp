@@ -1,25 +1,91 @@
 #include <GLFW/glfw3.h>
-#include "px4ctrl_gcs_client.h"
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <memory>
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
+#include <thread>
 #include <vector>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
 #include "px4ctrl_fsm.h"
 #include "px4ctrl_gcs.h"
-#include "px4ctrl_gcs_ros.h"
 #include "px4ctrl_state.h"
-#include "ros/init.h"
+#include "px4ctrl_gcs_client.h"
+
 #define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
+#ifdef __ROS_IMPL__
+#include "px4ctrl_gcs_ros.h"
+#include "ros/init.h"
+#endif
+
+#ifdef __ZMQ_IMPL__
+#include <zmq.hpp>
+#include <zmq_addon.hpp>
+#include "px4ctrl_gcs_zmq.h"
+#endif
+
 namespace px4ctrl{
 namespace gcs{
+
+    #ifdef __ZMQ_IMPL__
+    using json=nlohmann::json;
+        ZmqProxy::ZmqProxy(std::string base_dir):ctx(2),
+        xsub_socket(ctx,zmq::socket_type::xsub),
+        xpub_socket(ctx,zmq::socket_type::xpub){
+            std::ifstream config_file(base_dir + "/px4ctrl_zmq.json");
+            json json_file;
+            if (!config_file.is_open()) {
+                spdlog::error("Failed to open config file");
+                exit(1);
+            }
+            config_file >> json_file;
+            spdlog::info("Config file loaded");
+            config_file.close();
+
+            if (!(json_file.contains("xpub_endpoint_bind") && 
+                json_file.contains("xsub_endpoint_bind")
+                )) {
+                spdlog::error("Config file missing key");
+                exit(1);
+            }
+            xpub_endpoint = json_file["xpub_endpoint_bind"].template get<std::string>();
+            xsub_endpoint = json_file["xsub_endpoint_bind"].template get<std::string>();
+
+            // Init XSUB socket
+            try
+            {
+                xsub_socket.bind(xsub_endpoint);
+                xpub_socket.bind(xpub_endpoint);
+            }
+            catch (zmq::error_t e)
+            {
+                spdlog::error("unable bind xsub/xpub,check your config file, err:{}",e.what());
+                exit(1);
+            }
+            proxy_thread = std::thread(&ZmqProxy::run,this);
+        }
+
+        ZmqProxy::~ZmqProxy(){
+            ctx.shutdown();
+            ctx.close();
+            proxy_thread.join();
+        }
+
+        void ZmqProxy::run(){
+            zmq::proxy(xsub_socket, xpub_socket);
+            return;
+        }
+    #endif
+
+
     GcsClient::GcsClient(std::shared_ptr<GcsCom> gcs_com):gcs(gcs_com){
     }
 
@@ -112,6 +178,25 @@ void sigintHandler( int sig ) {
 }
 
 int main(int argc, char* argv[]){
+    // 检查参数数量
+    if (argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " -c <config_dir>" << std::endl;
+        return 1;
+    }
+
+    std::string flag = argv[1];
+    std::string config_dir;
+
+    // 检查参数是否为 -c
+    if (flag == "-c") {
+        config_dir = argv[2];
+        std::cout << "Config directory: " << config_dir << std::endl;
+    } else {
+        std::cerr << "Invalid argument: " << flag << std::endl;
+        std::cerr << "Usage: " << argv[0] << " -c <config_dir>" << std::endl;
+        return 1;
+    }
+
     signal( SIGINT, sigintHandler );
     //set up
     glfwSetErrorCallback(glfw_error_callback);
@@ -148,12 +233,21 @@ int main(int argc, char* argv[]){
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+   
+    #ifdef __ROS_IMPL__
     //use ros impl
     //init ros node
     ros::init(argc, argv, "px4ctrl_gcs_client");
     ros::NodeHandle nh;
     std::shared_ptr<px4ctrl::gcs::GcsCom> gcs_com = std::make_shared<px4ctrl::gcs::rosimpl::GcsRosCom>(nh);
     
+    #endif
+
+    #ifdef __ZMQ_IMPL__
+    px4ctrl::gcs::ZmqProxy proxy(config_dir);
+    std::shared_ptr<px4ctrl::gcs::GcsCom> gcs_com = std::make_shared<px4ctrl::gcs::zmqimpl::GcsZmqCom>(config_dir);
+    #endif
+
     //gcs client impl
     px4ctrl::gcs::GcsClient gcs_client(gcs_com);
 
