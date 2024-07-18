@@ -8,6 +8,9 @@ set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
+option(BUILD_CLIENT_ONLY "Build client only" ON)
+
+if(!BUILD_CLIENT_ONLY)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -80,3 +83,48 @@ target_link_libraries(px4ctrl_node
 catkin_install_python(PROGRAMS thrust_calibrate_scrips/thrust_calibrate.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+endif()
+
+
+if(BUILD_CLIENT_ONLY)
+  #If macos
+  if(APPLE)
+    find_package(OpenGL REQUIRED)
+    find_library(COCOA_LIBRARY Cocoa REQUIRED)
+    find_library(IOKIT_LIBRARY IOKit REQUIRED)
+    find_library(COREVIDEO_LIBRARY CoreVideo REQUIRED)
+  endif()
+
+  find_library(GLFW_LIBRARY glfw REQUIRED)
+  find_package(spdlog REQUIRED)
+
+  set(IMGUI_DIR imgui)
+
+  include_directories(
+  include
+  ${IMGUI_DIR} 
+  ${IMGUI_DIR}/backends
+  )
+
+
+  add_executable(px4ctrl_gcs_client
+    src/px4ctrl_gcs_client.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp 
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp 
+    ${IMGUI_DIR}/imgui.cpp 
+    ${IMGUI_DIR}/imgui_draw.cpp 
+    ${IMGUI_DIR}/imgui_demo.cpp 
+    ${IMGUI_DIR}/imgui_tables.cpp 
+    ${IMGUI_DIR}/imgui_widgets.cpp
+  )
+
+  target_link_libraries(px4ctrl_gcs_client
+    PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
+    PRIVATE ${OPENGL_LIBRARIES}
+    PRIVATE ${COCOA_LIBRARY}
+    PRIVATE ${IOKIT_LIBRARY}
+    PRIVATE ${COREVIDEO_LIBRARY}
+    PUBLIC glfw
+  )
+
+endif()
