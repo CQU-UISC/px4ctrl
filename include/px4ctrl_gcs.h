@@ -74,7 +74,7 @@ return true;
 }
 
 inline bool deserialize(const std::string& gcs_str,Gcs& gcs){
-  json j(gcs_str);
+  json j = json::parse(gcs_str);
   if(!(
     j.contains("id")&&
     j.contains("version")&&
@@ -141,7 +141,7 @@ return true;
 }
 
 inline bool deserialize(const std::string& drone_str,Drone& drone){
-  json j(drone_str);
+  json j = json::parse(drone_str);
   if(!(
     j.contains("id")&&
     j.contains("version")&&

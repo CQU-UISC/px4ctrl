@@ -156,7 +156,7 @@ namespace gcs{
                 gcs->send(gcs_queue.front());
                 gcs_queue.pop();
             }
-            spdlog::info("send gcs heartbeat");
+            //spdlog::info("send gcs heartbeat");
             gcs->send(Gcs{id++,0,0,ALL_DRONES,command::EMPTY,0});//Heartbeat
             last_recv_time = clock::now();
         }

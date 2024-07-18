@@ -94,6 +94,11 @@ endif()
 
 
 if(BUILD_CLIENT_ONLY)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
+  
   #If macos
   if(APPLE)
     find_package(OpenGL REQUIRED)
