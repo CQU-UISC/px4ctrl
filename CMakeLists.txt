@@ -24,6 +24,9 @@ find_package(catkin REQUIRED COMPONENTS
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(Eigen3 REQUIRED) 
 
+find_package(cppzmq REQUIRED)
+
+
 if(NOT TARGET spdlog)
     # Stand-alone build
     find_package(spdlog REQUIRED)
@@ -50,6 +53,7 @@ add_executable(px4ctrl_node
   src/px4ctrl_node.cpp
   src/px4ctrl_fsm.cpp
   src/px4ctrl_gcs_ros.cpp
+  src/px4ctrl_gcs_zmq.cpp
   src/px4ctrl_mavros.cpp
   src/px4ctrl_se3_controller.cpp
 )
@@ -57,6 +61,7 @@ add_executable(px4ctrl_node
 add_executable(px4ctrl_gcs_client
   src/px4ctrl_gcs_client.cpp
   src/px4ctrl_gcs_ros.cpp
+  src/px4ctrl_gcs_zmq.cpp
   ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp 
   ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp 
   ${IMGUI_DIR}/imgui.cpp 
@@ -73,11 +78,13 @@ target_link_libraries(px4ctrl_gcs_client
   PUBLIC ${catkin_LIBRARIES}
   PUBLIC ${OPENGL_gl_LIBRARY} 
   PUBLIC glfw
+  PUBLIC cppzmq
 )
 
 target_link_libraries(px4ctrl_node
   PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
   PUBLIC ${catkin_LIBRARIES}
+  PUBLIC cppzmq
 )
 
 catkin_install_python(PROGRAMS thrust_calibrate_scrips/thrust_calibrate.py

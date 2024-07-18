@@ -1,15 +1,48 @@
 #pragma once
 #include "px4ctrl_gcs.h"
 #include "px4ctrl_state.h"
+
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <queue>
+#include <thread>
 #include <utility>
+
+#define __ZMQ_IMPL__
+// #define __ROS_IMPL__
+
+#ifdef __ZMQ_IMPL__
+#undef __ROS_IMPL__
+#include <zmq.hpp>
+#include <json.hpp>
+#endif
+
 
 namespace px4ctrl{
 namespace gcs{
-    
+
+#ifdef __ZMQ_IMPL__
+  class ZmqProxy{
+    public:
+        ZmqProxy(std::string base_dir);
+        ~ZmqProxy();
+    private:
+        void run();
+        std::thread proxy_thread;
+
+        zmq::context_t ctx;
+        // Init XSUB socket
+        zmq::socket_t xsub_socket;
+        std::string xsub_endpoint;
+
+        // Init XPUB socket
+        zmq::socket_t xpub_socket;
+        std::string xpub_endpoint;
+  };
+#endif
+
+
     class GcsClient{
         //
         //use imgui
