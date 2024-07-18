@@ -13,7 +13,7 @@
 #include "px4ctrl_se3_controller.h"
 #include "px4ctrl_mavros.h"
 #include "px4ctrl_state.h"
-#include "px4ctrl_fsm_state.h"
+#include "px4ctrl_def.h"
 
 namespace px4ctrl {
 /* 

@@ -104,6 +104,7 @@ if(BUILD_CLIENT_ONLY)
 
   find_library(GLFW_LIBRARY glfw REQUIRED)
   find_package(spdlog REQUIRED)
+  find_package(cppzmq REQUIRED)
 
   set(IMGUI_DIR imgui)
 
@@ -116,6 +117,7 @@ if(BUILD_CLIENT_ONLY)
 
   add_executable(px4ctrl_gcs_client
     src/px4ctrl_gcs_client.cpp
+    src/px4ctrl_gcs_zmq.cpp
     ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp 
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp 
     ${IMGUI_DIR}/imgui.cpp 
@@ -127,11 +129,12 @@ if(BUILD_CLIENT_ONLY)
 
   target_link_libraries(px4ctrl_gcs_client
     PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
+    PUBLIC ${GLFW_LIBRARY}
     PRIVATE ${OPENGL_LIBRARIES}
     PRIVATE ${COCOA_LIBRARY}
     PRIVATE ${IOKIT_LIBRARY}
     PRIVATE ${COREVIDEO_LIBRARY}
-    PUBLIC glfw
+    PUBLIC cppzmq
   )
 
 endif()

@@ -1,6 +1,6 @@
 #pragma once
 #include "px4ctrl_gcs.h"
-#include "px4ctrl_state.h"
+#include "px4ctrl_def.h"
 
 #include <cstdint>
 #include <map>

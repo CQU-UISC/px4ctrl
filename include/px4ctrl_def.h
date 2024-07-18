@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <chrono>
 
 #define MAKE_ENUM(VAR) VAR,
 #define MAKE_STRINGS(VAR) #VAR,
@@ -35,4 +36,8 @@ const char* const Px4CtrlStateName[] = {
 
 inline std::string state_map(const Px4CtrlState& state){
     return Px4CtrlStateName[state];
+}
+
+namespace px4ctrl{
+    using clock = std::chrono::high_resolution_clock;
 }

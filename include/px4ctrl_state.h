@@ -11,9 +11,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "px4ctrl_def.h"
 
 namespace px4ctrl{
-    using clock = std::chrono::high_resolution_clock;
+    
 
     template <typename T, typename... U>
     concept any_of = (std::same_as<T, U> || ...);
