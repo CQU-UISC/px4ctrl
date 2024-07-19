@@ -149,7 +149,7 @@ namespace gcs{
             Drone drone_message;
             while(gcs->receive(drone_message)){
                 cb_queue[drone_message.drone_id].push(drone_message);
-                spdlog::info("recv drone:{}",drone_message.drone_id);
+                // spdlog::info("recv drone:{}",drone_message.drone_id);
             }
             //send
             while(!gcs_queue.empty()){

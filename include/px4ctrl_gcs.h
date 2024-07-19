@@ -1,10 +1,11 @@
 #pragma once
 
 #include <array>
+#include <iostream>
 #include <json.hpp>
 #include <cstdint>
 #include <string>
-
+#include <spdlog/spdlog.h>
 using json = nlohmann::json;
 
 namespace px4ctrl {
@@ -142,6 +143,7 @@ return true;
 
 inline bool deserialize(const std::string& drone_str,Drone& drone){
   json j = json::parse(drone_str);
+  // spdlog::warn(j.dump());
   if(!(
     j.contains("id")&&
     j.contains("version")&&

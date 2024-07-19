@@ -687,11 +687,9 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         0.1; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
     const double TIME_KEEP_C =
         3.0; // Constraint 3: Time(s) the Constraint 1&2 need to keep.
-
     bool C12_satisfy =
         (des.p(2) - L2.landing.start_pos(2)) < POSITION_DEVIATION_C &&
         vel.norm() < VELOCITY_THR_C;
-
     if (C12_satisfy) {
       if (L2.landing.is_first_time) {
         L2.landing.time_C12_reached = clock::now();
@@ -701,18 +699,23 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
               clock::now() - L2.landing.time_C12_reached)
               .count() > TIME_KEEP_C) // Constraint 3 reached
       {
+        logger_ptr->info("Successfully landed");
         landed = true;
       }
     }
 
-    if (px4_state->ext_state.first->landed_state ==
-                      mavros_msgs::ExtendedState::LANDED_STATE_ON_GROUND) {
+    logger_ptr->info("Desired position: {},{},{}", des.p(0), des.p(1), des.p(2));
+    logger_ptr->info("Current position: {},{},{}", px4_state->odom.first->pose.pose.position.x,
+                 px4_state->odom.first->pose.pose.position.y,
+                 px4_state->odom.first->pose.pose.position.z);
+    logger_ptr->info("Landing: C12_satisfy:{}, landed:{}, Landed_state:{}",
+    C12_satisfy, landed,
+    px4_state->ext_state.first->landed_state);
+
+    if (px4_state->ext_state.first->landed_state ==mavros_msgs::ExtendedState::LANDED_STATE_ON_GROUND
+    &&landed==true) {
       L2 = L2_IDLE;
     }
-
-    logger_ptr->info("Landing: C12_satisfy:{}, landed:{}, Landed_state:{}",
-                     C12_satisfy, landed,
-                     px4_state->ext_state.first->landed_state);
 
     break;
   }

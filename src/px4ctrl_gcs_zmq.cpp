@@ -71,13 +71,13 @@ namespace gcs{
                 zmq::recv_multipart(sub, std::back_inserter(recv_msgs));
                 assert(result && "recv failed");
                 assert(*result == 2);
-                spdlog::info("[Gcs] recv,tpoic: {} msg:{}",recv_msgs.at(0).to_string(),recv_msgs.at(1).to_string());
+                // spdlog::info("[Gcs] recv,tpoic: {} msg:{}",recv_msgs.at(0).to_string(),recv_msgs.at(1).to_string());
                 deserialize(recv_msgs[1].to_string(),drone);
                 while(cb_queue.size()>10){
                     cb_queue.pop();
                 }
                 cb_queue.push(drone);
-                spdlog::info("[Gcs] recv,drone_id: {}",drone.drone_id);
+                // spdlog::info("[Gcs] recv,drone_id: {}",drone.drone_id);
             }
         }
 
