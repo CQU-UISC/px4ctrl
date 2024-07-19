@@ -688,7 +688,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     const double TIME_KEEP_C =
         3.0; // Constraint 3: Time(s) the Constraint 1&2 need to keep.
     bool C12_satisfy =
-        (des.p(2) - L2.landing.start_pos(2)) < POSITION_DEVIATION_C &&
+        (des.p(2) - px4_state->odom.first->pose.pose.position.z) < POSITION_DEVIATION_C &&
         vel.norm() < VELOCITY_THR_C;
     if (C12_satisfy) {
       if (L2.landing.is_first_time) {

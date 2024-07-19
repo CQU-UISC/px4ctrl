@@ -16,8 +16,8 @@
         "Kv":1.5,
         "Ka":1.5,
         "Kw":5.0,
-        "hover_percentage": 0.7,
-        "bodyrates_control": true
+        "hover_percentage": 0.2,
+        "bodyrates_control": false
     },
     "drone_id": 1,
     "gcs_id": 1,
@@ -26,6 +26,6 @@
         "mavros_timeout": 1000,
         "odom_timeout": 1000,
         "gcs_timeout": 1000,
-        "low_battery_voltage":0
+        "low_battery_voltage": 19.0
     }
 }
