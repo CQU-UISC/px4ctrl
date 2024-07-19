@@ -684,7 +684,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         -0.5; // Constraint 1: target position below real position for
               // POSITION_DEVIATION_C meters.
     const double VELOCITY_THR_C =
-        0.1; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
+        0.3; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
     const double TIME_KEEP_C =
         3.0; // Constraint 3: Time(s) the Constraint 1&2 need to keep.
     bool C12_satisfy =

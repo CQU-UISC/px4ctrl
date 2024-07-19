@@ -4,11 +4,11 @@ project(px4ctrl_lux)
 set(CMAKE_VERBOSE_MAKEFILE "false")
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "RELEASE")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
-option(BUILD_CLIENT_ONLY "Build client only" ON)
+option(BUILD_CLIENT_ONLY "Build client only" OFF)
 
 if(NOT BUILD_CLIENT_ONLY)
 find_package(catkin REQUIRED COMPONENTS

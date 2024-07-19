@@ -164,7 +164,6 @@ namespace gcs{
                 zmq::recv_multipart(sub, std::back_inserter(recv_msgs));
                 assert(result && "recv failed");
                 assert(*result == 2);
-                //spdlog::info("[Drone] recv,tpoic: {} msg:{}",recv_msgs.at(0).to_string(),recv_msgs.at(1).to_string());
                 deserialize(recv_msgs[1].to_string(),gcs);
                 while(cb_queue.size()>10){
                     cb_queue.pop();
