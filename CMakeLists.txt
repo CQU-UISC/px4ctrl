@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
 option(BUILD_CLIENT_ONLY "Build client only" ON)
 
-if(!BUILD_CLIENT_ONLY)
+if(NOT BUILD_CLIENT_ONLY)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -98,7 +98,7 @@ if(BUILD_CLIENT_ONLY)
   set(CMAKE_BUILD_TYPE Debug)
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
-  
+
   #If macos
   if(APPLE)
     find_package(OpenGL REQUIRED)
