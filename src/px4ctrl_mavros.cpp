@@ -90,7 +90,7 @@ namespace px4ctrl {
 
     bool PX4CTRL_ROS_BRIDGE::force_disarm(){
         mavros_msgs::CommandLong disarm_cmd;
-        disarm_cmd.request.command = mavros_msgs::CommandLong::CMD_COMPONENT_ARM_DISARM;
+        disarm_cmd.request.command = 400;
         disarm_cmd.request.param1 = 0;
         disarm_cmd.request.param2 = 21196;
         disarm_cmd.request.param3 = 0;
