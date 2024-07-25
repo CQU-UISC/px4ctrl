@@ -99,7 +99,8 @@ namespace gcs{
             command::TAKEOFF,
             command::LAND,
             command::ALLOW_CMD_CTRL,
-            command::FORCE_HOVER
+            command::FORCE_HOVER,
+            command::FORCE_DISARM
         };
 
         for(auto & el :cb_queue){

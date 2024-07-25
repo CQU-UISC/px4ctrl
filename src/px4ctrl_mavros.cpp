@@ -2,6 +2,7 @@
 
 #include "mavros_msgs/AttitudeTarget.h"
 #include "mavros_msgs/CommandBool.h"
+#include "mavros_msgs/CommandLong.h"
 #include "mavros_msgs/SetMode.h"
 #include "px4ctrl_state.h"
 #include "ros/init.h"
@@ -37,6 +38,7 @@ namespace px4ctrl {
         px4_cmd_pub           = nh_.advertise<mavros_msgs::AttitudeTarget >( "/mavros/setpoint_raw/attitude", 10 );
         px4_set_mode_client  = nh_.serviceClient< mavros_msgs::SetMode >( "/mavros/set_mode" );
         px4_arming_client = nh_.serviceClient< mavros_msgs::CommandBool >( "/mavros/cmd/arming" );
+        px4_cmd_client = nh_.serviceClient<mavros_msgs::CommandLong >("/mavros/cmd/command");
 
         spdlog::info("Init px4ros node");
         return;
@@ -81,6 +83,27 @@ namespace px4ctrl {
                 spdlog::error( "ARM rejected by PX4!" );
             else
                 spdlog::error( "DISARM rejected by PX4!" );
+            return false;
+        }
+        return true;
+    }
+
+    bool PX4CTRL_ROS_BRIDGE::force_disarm(){
+        mavros_msgs::CommandLong disarm_cmd;
+        disarm_cmd.request.command = mavros_msgs::CommandLong::CMD_COMPONENT_ARM_DISARM;
+        disarm_cmd.request.param1 = 0;
+        disarm_cmd.request.param2 = 21196;
+        disarm_cmd.request.param3 = 0;
+        disarm_cmd.request.param4 = 0;
+        disarm_cmd.request.param5 = 0;
+        disarm_cmd.request.param6 = 0;
+        disarm_cmd.request.param7 = 0;
+        if( px4_state_->state.first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
+            spdlog::error("Not in offboard mode, can't disarm");
+            return false;
+        }
+        if (!( px4_cmd_client.call( disarm_cmd ) && disarm_cmd.response.success )){
+            spdlog::error( "DISARM rejected by PX4!" );
             return false;
         }
         return true;

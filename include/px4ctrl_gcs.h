@@ -24,7 +24,8 @@ namespace command {
     FUNC(TAKEOFF)\
     FUNC(LAND)\
     FUNC(ALLOW_CMD_CTRL)\
-    FUNC(FORCE_HOVER)
+    FUNC(FORCE_HOVER)\
+    FUNC(FORCE_DISARM)
 
   enum DRONE_COMMAND{
       GEN_ENUM(MAKE_ENUM)

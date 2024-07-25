@@ -1,8 +1,8 @@
 {
     "xpub_endpoint_bind":"tcp://*:9200",
     "xsub_endpoint_bind":"tcp://*:9210",
-    "xpub_endpoint":"tcp://10.242.28.112:9200",
-    "xsub_endpoint":"tcp://10.242.28.112:9210",
+    "xpub_endpoint":"tcp://localhost:9200",
+    "xsub_endpoint":"tcp://localhost:9210",
     "drone_topic":"/px4ctrl/drone",
     "gcs_topic":"/px4ctrl/gcs"
 }

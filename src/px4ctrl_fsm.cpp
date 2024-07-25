@@ -531,6 +531,11 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
         logger_ptr->error("Failed to disarm");
       }
     }
+    if( gcs_message.drone_cmd==gcs::command::FORCE_DISARM){
+      if(!px4_mavros->force_disarm()){
+        logger_ptr->error("Failed to force disarm");
+      }
+    }
   }
 
   // update state
