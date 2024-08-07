@@ -1,5 +1,4 @@
 #include "px4ctrl_se3_controller.h"
-#include "Eigen/src/Geometry/Quaternion.h"
 #include "px4ctrl_state.h"
 #include <chrono>
 #include <cmath>
@@ -36,9 +35,12 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
   err_p = pos - des.p;
   err_v = vel - des.v;
 
-  Eigen::Vector3d des_acc =
-      des.a - params.Kv * err_v - params.Kp * err_p + params.g * ez;
 
+  Eigen::Vector3d des_acc = des.a + params.g * ez;
+  des_acc.x() -= limit(err_p.x(),-params.pxy_error_max,params.pxy_error_max)*params.KP_XY + limit(err_v.x(),-params.vxy_error_max,params.vxy_error_max)*params.KD_XY;
+  des_acc.y() -= limit(err_p.y(),-params.pxy_error_max,params.pxy_error_max)*params.KP_XY + limit(err_v.y(),-params.vxy_error_max,params.vxy_error_max)*params.KD_XY;
+  des_acc.z() -= limit(err_p.z(),-params.pz_error_max,params.pz_error_max)*params.KP_Z + limit(err_v.z(),-params.vz_error_max,params.vz_error_max)*params.KD_Z;
+  
   double collective_thrust = des_acc.dot(quat * ez);
   ret.thrust = thrustMap(collective_thrust);
 
@@ -145,7 +147,7 @@ bool LinearControl::estimateThrustModel(const Eigen::Vector3d &est_a,
              thr * thr2acc); // collective_thrust = g (imu z value),
                              // collective_thrust/thurst2acc = hover_percentage;
     P = (1 - K * thr) * P / rho2;
-
+    spdlog::info("Estimated hoving percentage:{}",params.g/thr2acc);
     return true;
   }
   return false;

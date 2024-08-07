@@ -81,6 +81,7 @@ namespace px4ctrl {
         struct L2TakingOffState{
             Eigen::Vector3d start_pos;
             Eigen::Quaterniond start_q;
+            clock::time_point last_takeoff_time;
         };
 
         struct L2HoveringState{
@@ -173,7 +174,8 @@ namespace px4ctrl {
             void proof_alive(controller::ControlCommand&);
 
             GuardStatus guard();//监视状态（电池，速度，位置，姿态等）&& gcs && px4, true 代表触发
-
+            bool faile_safe = false;
+            
             //ctrl state
             L0State L0;
             L1State L1;

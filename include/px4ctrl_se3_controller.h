@@ -69,7 +69,8 @@ struct ControlCommand
 struct ControlParams{
     double mass;
     double g;
-    double Kp,Kv,Ka,Kw;
+    double KP_XY, KD_XY, KP_Z, KD_Z, pxy_error_max, vxy_error_max, pz_error_max, vz_error_max;
+    double Ka,Kw;
     double hover_percentage;
     double Ix,Iy,Iz;//TODO
     bool bodyrates_control;
@@ -91,7 +92,16 @@ public:
 private:
   ControlParams params;
   Eigen::Vector3d vee(const Eigen::Matrix3d &m);
-  
+  template<typename T>
+  inline T limit(const T& value,const T& min,const T& max){
+    if(value>max){
+      return max;
+    }
+    if(value<min){
+      return min;
+    }
+    return value;
+  }
   //Thrust mapping
   std::queue<std::pair<clock::time_point, double>> timed_thrust;
   static constexpr double kMinNormalizedCollectiveThrust = 3.0;

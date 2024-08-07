@@ -151,8 +151,14 @@ bool Px4Ctrl::load_config() {
   if (!(json_file["control_params"].contains("g") &&
         json_file["control_params"].contains("hover_percentage") &&
         json_file["control_params"].contains("mass") &&
-        json_file["control_params"].contains("Kp") &&
-        json_file["control_params"].contains("Kv") &&
+        json_file["control_params"].contains("KP_XY") &&
+        json_file["control_params"].contains("KD_XY") &&
+        json_file["control_params"].contains("KP_Z") &&
+        json_file["control_params"].contains("KD_Z") &&
+        json_file["control_params"].contains("pxy_error_max") &&
+        json_file["control_params"].contains("vxy_error_max") &&
+        json_file["control_params"].contains("pz_error_max") &&
+        json_file["control_params"].contains("vz_error_max") &&
         json_file["control_params"].contains("Ka") &&
         json_file["control_params"].contains("Kw") &&
         json_file["control_params"].contains("bodyrates_control"))) {
@@ -165,10 +171,22 @@ bool Px4Ctrl::load_config() {
       json_file["control_params"]["hover_percentage"].template get<double>();
   params.control_params.mass =
       json_file["control_params"]["mass"].template get<double>();
-  params.control_params.Kp =
-      json_file["control_params"]["Kp"].template get<double>();
-  params.control_params.Kv =
-      json_file["control_params"]["Kv"].template get<double>();
+  params.control_params.KP_XY =
+      json_file["control_params"]["KP_XY"].template get<double>();
+  params.control_params.KD_XY =
+      json_file["control_params"]["KD_XY"].template get<double>();
+  params.control_params.KP_Z =
+      json_file["control_params"]["KP_Z"].template get<double>();
+  params.control_params.KD_Z =
+      json_file["control_params"]["KD_Z"].template get<double>();
+  params.control_params.pxy_error_max = 
+      json_file["control_params"]["pxy_error_max"].template get<double>();
+  params.control_params.vxy_error_max = 
+    json_file["control_params"]["vxy_error_max"].template get<double>();
+  params.control_params.pz_error_max = 
+    json_file["control_params"]["pz_error_max"].template get<double>();
+  params.control_params.vz_error_max = 
+    json_file["control_params"]["vz_error_max"].template get<double>();
   params.control_params.Ka =
       json_file["control_params"]["Ka"].template get<double>();
   params.control_params.Kw =
@@ -347,28 +365,42 @@ void Px4Ctrl::process() {
   case GuardStatus::GCS_TIMEOUT:
     // Try land
     logger_ptr->error("GCS timeout, try land");
+    faile_safe = true;
     px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     break;
   case GuardStatus::MAVROS_TIMEOUT:
     // Try land&&kill
     logger_ptr->error("Mavros timeout, try land");
+    faile_safe = true;
     px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     // px4_mavros->set_arm(false);
     break;
   case GuardStatus::ODOM_TIMEOUT:
     logger_ptr->error("Odom timeout, try land");
+    faile_safe = true;
     px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     break;
   case GuardStatus::LOW_VOLTAGE:
     logger_ptr->error("Low voltage, try land");
+    faile_safe = true;
     px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_LAND);
     break;
   case GuardStatus::OK:
     // process state and apply control
     process_l0(ctrl_cmd);
     // control
-    apply_control(ctrl_cmd);
+    if(!faile_safe){
+      apply_control(ctrl_cmd);
+    }
     break;
+  }
+  if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
+    //force command
+    if( gcs_message.drone_cmd==gcs::command::FORCE_DISARM){
+        if(!px4_mavros->force_disarm()){
+          logger_ptr->error("Failed to force disarm");
+        }
+    }
   }
 
   //
@@ -400,10 +432,7 @@ void Px4Ctrl::fill_drone_message() {
   // float quat[4];
   // float battery;
 
-  ++drone_message.id;
-  drone_message.version = params.version;
   drone_message.drone_id = params.drone_id;
-  drone_message.gcs_id = params.gcs_id;
   drone_message.px4ctrl_status[0] = L0.state;
   drone_message.px4ctrl_status[1] = L1.state;
   drone_message.px4ctrl_status[2] = L2.state;
@@ -473,7 +502,7 @@ void Px4Ctrl::process_l0(controller::ControlCommand &ctrl_cmd) {
   }
 
   // user input
-  if (gcs_message.id != 0 && gcs_message.drone_id == params.drone_id) {
+  if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
     if (gcs_message.drone_cmd == gcs::command::ENTER_OFFBOARD) {
       px4_mavros->set_mode(mavros_msgs::State::MODE_PX4_OFFBOARD);
     }
@@ -520,7 +549,7 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
   }
   }
   // 处理用户的输入
-  if (gcs_message.id != 0 && gcs_message.drone_id == params.drone_id) {
+  if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
     if (gcs_message.drone_cmd == gcs::command::ARM) {
       if (!px4_mavros->set_arm(true)) {
         logger_ptr->error("Failed to arm");
@@ -529,11 +558,6 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
     if (gcs_message.drone_cmd == gcs::command::DISARM) {
       if (!px4_mavros->set_arm(false)) {
         logger_ptr->error("Failed to disarm");
-      }
-    }
-    if( gcs_message.drone_cmd==gcs::command::FORCE_DISARM){
-      if(!px4_mavros->force_disarm()){
-        logger_ptr->error("Failed to force disarm");
       }
     }
   }
@@ -581,8 +605,11 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     if (std::chrono::duration_cast<std::chrono::seconds>(clock::now() -
                                                          L2.idle.last_arm_time)
             .count() > params.l2_idle_disarm_time) {
-      if (!px4_mavros->set_arm(false)) {
-        logger_ptr->error("Failed to disarm");
+      // if (!px4_mavros->set_arm(false)) {
+      //   logger_ptr->error("Failed to disarm");
+      // }
+      if(!px4_mavros->force_disarm()){
+        logger_ptr->error("L2_IDLE:Failed to force disarm");
       }
       L2.idle.is_first_time = true;
     }
@@ -599,6 +626,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       auto &quat = pose.orientation;
       L2.takingoff.start_pos = Eigen::Vector3d(pos.x, pos.y, pos.z);
       L2.takingoff.start_q = Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
+      L2.takingoff.last_takeoff_time = clock::now();
       logger_ptr->info("Taking off from:{} {} {}", L2.takingoff.start_pos.x(),
                        L2.takingoff.start_pos.y(), L2.takingoff.start_pos.z());
       logger_ptr->info("Taking off to:{} {} {}", L2.takingoff.start_pos.x(),
@@ -620,15 +648,25 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         break;
       }
     }
+    
+    const Eigen::Vector3d des_pos(
+          L2.takingoff.start_pos.x(), L2.takingoff.start_pos.y(),
+          L2.takingoff.start_pos.z() + params.l2_takeoff_height);
+
     controller::DesiredState des;
     des.p = L2.takingoff.start_pos;
     des.q = L2.takingoff.start_q;
-    des.p.z() += params.l2_takeoff_height;
     des.v = Eigen::Vector3d(0, 0, params.l2_takeoff_landing_speed);
     des.yaw = controller->fromQuaternion2yaw(des.q);
-
+    des.p.z()+=params.l2_takeoff_landing_speed*std::chrono::duration_cast<std::chrono::seconds>(clock::now()-L2.takingoff.last_takeoff_time).count();
+    if(des.p.z()>des_pos.z()){
+      des.p.z() = des_pos.z();
+      des.v = Eigen::Vector3d(0,0,0);
+    }
+    logger_ptr->info("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
+    estimate_thrust();
     break;
   }
 
@@ -683,7 +721,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
     bool landed = false;
-
+    logger_ptr->info("Land Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     // land_detector parameters
     const double POSITION_DEVIATION_C =
         -0.5; // Constraint 1: target position below real position for
@@ -717,8 +755,11 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     C12_satisfy, landed,
     px4_state->ext_state.first->landed_state);
 
-    if (px4_state->ext_state.first->landed_state ==mavros_msgs::ExtendedState::LANDED_STATE_ON_GROUND
-    &&landed==true) {
+    if (landed==true) {
+      // Disarm
+      if(!px4_mavros->force_disarm()){
+        logger_ptr->error("Failed to force disarm");
+      }
       L2 = L2_IDLE;
     }
 
@@ -792,7 +833,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
   }
 
   // 处理用户的输入
-  if (gcs_message.id != 0 && gcs_message.drone_id == params.drone_id) {
+  if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
     switch (gcs_message.drone_cmd) {
 
     case gcs::command::TAKEOFF: {
@@ -819,6 +860,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       L2 = L2_HOVERING;
       break;
     }
+
     case gcs::command::ALLOW_CMD_CTRL: {
       if (L2.state == L2_HOVERING) {
         L2 = L2_ALLOW_CMD_CTRL;

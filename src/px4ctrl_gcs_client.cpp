@@ -20,10 +20,6 @@
 #define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
-#ifdef __ROS_IMPL__
-#include "px4ctrl_gcs_ros.h"
-#include "ros/init.h"
-#endif
 
 #ifdef __ZMQ_IMPL__
 #include <zmq.hpp>
@@ -132,7 +128,7 @@ namespace gcs{
             for(const auto &cmd : cmd_list){
                 if(ImGui::Button(command::DRONE_COMMAND_NAME[cmd])){
                     gcs_queue.push(
-                        Gcs{id++,0,0,el.drone_id,(uint8_t)cmd,0}
+                        Gcs{el.drone_id,(uint8_t)cmd}
                     );
                 }
             }
@@ -158,7 +154,7 @@ namespace gcs{
                 gcs_queue.pop();
             }
             //spdlog::info("send gcs heartbeat");
-            gcs->send(Gcs{id++,0,0,ALL_DRONES,command::EMPTY,0});//Heartbeat
+            gcs->send(Gcs{ALL_DRONES,command::EMPTY});//Heartbeat
             last_recv_time = clock::now();
         }
     }
@@ -239,16 +235,6 @@ int main(int argc, char* argv[]){
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
-   
-    #ifdef __ROS_IMPL__
-    //use ros impl
-    //init ros node
-    ros::init(argc, argv, "px4ctrl_gcs_client");
-    ros::NodeHandle nh;
-    std::shared_ptr<px4ctrl::gcs::GcsCom> gcs_com = std::make_shared<px4ctrl::gcs::rosimpl::GcsRosCom>(nh);
-    
-    #endif
 
     #ifdef __ZMQ_IMPL__
     px4ctrl::gcs::ZmqProxy proxy(config_dir);

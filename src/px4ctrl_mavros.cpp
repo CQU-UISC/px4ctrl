@@ -138,7 +138,7 @@ namespace px4ctrl {
         msg.orientation.x = quat[1];
         msg.orientation.y = quat[2];
         msg.orientation.z = quat[3];
-        msg.thrust = thrust;
+        msg.thrust = thrust;//9.81==>Hover thrust=9.81
 
         px4_cmd_pub.publish( msg );
 

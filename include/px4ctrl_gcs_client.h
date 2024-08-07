@@ -10,7 +10,6 @@
 #include <utility>
 
 #define __ZMQ_IMPL__
-// #define __ROS_IMPL__
 
 #ifdef __ZMQ_IMPL__
 #undef __ROS_IMPL__

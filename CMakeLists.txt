@@ -4,7 +4,7 @@ project(px4ctrl_lux)
 set(CMAKE_VERBOSE_MAKEFILE "false")
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_BUILD_TYPE "RELEASE")
+set(CMAKE_BUILD_TYPE "DEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
@@ -26,6 +26,7 @@ find_package(Eigen3 REQUIRED)
 
 find_package(cppzmq REQUIRED)
 
+add_subdirectory("serial")
 
 if(NOT TARGET spdlog)
     # Stand-alone build
@@ -47,12 +48,12 @@ include_directories(
   include
   ${IMGUI_DIR} 
   ${IMGUI_DIR}/backends
+  serial/include
 )
 
 add_executable(px4ctrl_node 
   src/px4ctrl_node.cpp
   src/px4ctrl_fsm.cpp
-  src/px4ctrl_gcs_ros.cpp
   src/px4ctrl_gcs_zmq.cpp
   src/px4ctrl_mavros.cpp
   src/px4ctrl_se3_controller.cpp
@@ -60,7 +61,6 @@ add_executable(px4ctrl_node
 
 add_executable(px4ctrl_gcs_client
   src/px4ctrl_gcs_client.cpp
-  src/px4ctrl_gcs_ros.cpp
   src/px4ctrl_gcs_zmq.cpp
   ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp 
   ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp 
@@ -110,6 +110,7 @@ if(BUILD_CLIENT_ONLY)
   find_library(GLFW_LIBRARY glfw REQUIRED)
   find_package(spdlog REQUIRED)
   find_package(cppzmq REQUIRED)
+  add_subdirectory("serial")
 
   set(IMGUI_DIR imgui)
 
@@ -117,6 +118,7 @@ if(BUILD_CLIENT_ONLY)
   include
   ${IMGUI_DIR} 
   ${IMGUI_DIR}/backends
+  serial/include
   )
 
 

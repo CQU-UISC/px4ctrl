@@ -1,9 +1,11 @@
 #pragma once
 #include "px4ctrl_gcs.h"
+#include <mutex>
 #include <queue>
 #include <thread>
 #include <zmq.hpp>
 
+// For single 
 namespace px4ctrl{
 namespace gcs{
     namespace zmqimpl{
@@ -20,6 +22,7 @@ namespace gcs{
             bool receive(Drone&) override;
             
         private:
+            std::mutex mutex_queue;
             std::thread recv_thread;
             bool ok = true;
             void recv();
@@ -44,7 +47,7 @@ namespace gcs{
             bool send(const Drone&) override;
             bool receive(Gcs&) override;
         private:
-
+            std::mutex mutex_queue;
             std::thread recv_thread;
             bool ok = true;
             void recv();

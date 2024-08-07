@@ -1,6 +1,8 @@
 #include "px4ctrl_gcs_zmq.h"
 #include "px4ctrl_gcs.h"
 
+#include <cstring>
+#include <mutex>
 #include <spdlog/spdlog.h>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
@@ -71,12 +73,15 @@ namespace gcs{
                 zmq::recv_multipart(sub, std::back_inserter(recv_msgs));
                 assert(result && "recv failed");
                 assert(*result == 2);
-                // spdlog::info("[Gcs] recv,tpoic: {} msg:{}",recv_msgs.at(0).to_string(),recv_msgs.at(1).to_string());
-                deserialize(recv_msgs[1].to_string(),drone);
-                while(cb_queue.size()>10){
-                    cb_queue.pop();
+                spdlog::debug("[Gcs] recv,tpoic: {} msg:{}",recv_msgs.at(0).to_string(),recv_msgs.at(1).to_string());
+                memcpy(&drone,recv_msgs[1].data(),sizeof(Drone));
+                {
+                    std::lock_guard<std::mutex> lock(mutex_queue);
+                    while(cb_queue.size()>10){
+                        cb_queue.pop();
+                    }
+                    cb_queue.push(drone);
                 }
-                cb_queue.push(drone);
                 // spdlog::info("[Gcs] recv,drone_id: {}",drone.drone_id);
             }
         }
@@ -85,20 +90,19 @@ namespace gcs{
             if(cb_queue.empty()){
                 return false;
             }
-            
-            drone = cb_queue.front();
-            cb_queue.pop();
+            {
+                std::lock_guard<std::mutex> lock(mutex_queue);
+                drone = cb_queue.front();
+                cb_queue.pop();
+            }
             return true;
         }
 
         bool GcsZmqCom::send(const Gcs& gcs){
-            std::string msg;
-            if(!serialize(gcs,msg)){
-                return false;
-            }
             //TODO read doc
             pub.send(zmq::buffer(gcs_topic),zmq::send_flags::sndmore);
-            pub.send(zmq::buffer(msg));
+            pub.send(zmq::buffer(&gcs, sizeof(Gcs)));
+            spdlog::debug("[Gcs] send ,tpoic: {}",gcs_topic);
             return true;
         }
 
@@ -164,11 +168,15 @@ namespace gcs{
                 zmq::recv_multipart(sub, std::back_inserter(recv_msgs));
                 assert(result && "recv failed");
                 assert(*result == 2);
-                deserialize(recv_msgs[1].to_string(),gcs);
-                while(cb_queue.size()>10){
-                    cb_queue.pop();
+                memcpy(&gcs,recv_msgs[1].data(),sizeof(Gcs));
+                spdlog::debug("[Drone] recv,tpoic: {} msg:{}",recv_msgs.at(0).to_string(),recv_msgs.at(1).to_string());
+               {
+                    std::lock_guard<std::mutex> lock(mutex_queue);
+                    while(cb_queue.size()>10){
+                        cb_queue.pop();
+                    }
+                    cb_queue.push(gcs);
                 }
-                cb_queue.push(gcs);
             }
         }
 
@@ -176,20 +184,19 @@ namespace gcs{
             if(cb_queue.empty()){
                 return false;
             }
-            
+            {       
+            std::lock_guard<std::mutex> lock(mutex_queue);
             gcs = cb_queue.front();
             cb_queue.pop();
+            }
             return true;
         }
 
         bool DroneZmqCom::send(const Drone& drone){
-            std::string msg;
-            if(!serialize(drone,msg)){
-                return false;
-            }
             //TODO read doc
             pub.send(zmq::buffer(drone_topic),zmq::send_flags::sndmore);
-            pub.send(zmq::buffer(msg));
+            pub.send(zmq::buffer(&drone, sizeof(Drone)));
+            spdlog::debug("[Drone] send ,tpoic: {}",drone_topic);
             return true;
         }
 

@@ -7,3 +7,6 @@
 [submodule "zmq/cppzmq"]
 	path = zmq/cppzmq
 	url = https://github.com/zeromq/cppzmq.git
+[submodule "serial"]
+	path = serial
+	url = https://github.com/wjwwood/serial.git/
