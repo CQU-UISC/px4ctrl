@@ -9,7 +9,7 @@
 #include <string>
 #include <spdlog/spdlog.h>
 
-#include "px4ctrl_gcs.h"
+#include "com/px4ctrl_gcs.h"
 #include "px4ctrl_se3_controller.h"
 #include "px4ctrl_mavros.h"
 #include "px4ctrl_state.h"
@@ -150,8 +150,8 @@ namespace px4ctrl {
 
     class Px4Ctrl{
         public:
-            Px4Ctrl(std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_ros, std::shared_ptr<PX4_STATE> px4_state, std::shared_ptr<gcs::DroneCom> drone_com);
-            Px4Ctrl(std::string base_dir, std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::DroneCom> drone_com);
+            Px4Ctrl(std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::GcsCom> gcs_com, std::shared_ptr<gcs::DroneCom> drone_com);
+            Px4Ctrl(std::string base_dir, std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::GcsCom> gcs_com,std::shared_ptr<gcs::DroneCom> drone_com);
             ~Px4Ctrl() = default;
             
             //run control loop
@@ -204,6 +204,7 @@ namespace px4ctrl {
 
             //GCS
             std::shared_ptr<gcs::DroneCom> drone_com;
+            std::shared_ptr<gcs::GcsCom> gcs_com;
             void fill_drone_message();
             gcs::Drone drone_message;
             clock::time_point last_gcs_time;

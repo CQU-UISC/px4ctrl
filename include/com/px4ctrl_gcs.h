@@ -47,12 +47,14 @@ namespace command {
 struct Gcs {
   uint8_t drone_id;
   uint8_t drone_cmd;
-  uint16_t crc;
+  bool serial_forwad;//true/false
+  uint16_t crc;//todo
 };
 
 inline void reset(Gcs& gcs){
   gcs.drone_id = 0;
   gcs.drone_cmd = command::EMPTY;
+  gcs.serial_forwad = false;
 }
 
 inline bool is_same(uint8_t self,uint8_t gcs_drone_id){
@@ -74,7 +76,8 @@ struct Drone {
   float omega[3];
   float quat[4];
   float battery;
-  uint16_t crc;
+  bool serial_forwad;//true/false
+  uint16_t crc;//todo
 };
 
 inline void reset(Drone& drone){
@@ -88,18 +91,19 @@ inline void reset(Drone& drone){
     drone.omega[i] = 0;
     drone.quat[i+1] = 0;
   }
+  drone.serial_forwad = false;
   drone.battery = 0;
 }
 
 
-template <typename S, typename R> class ICom {
+template <typename S> class ICom {
 public:
   virtual bool send(const S &) = 0;
-  virtual bool receive(R &) = 0;
+  virtual bool receive(S &) = 0;
 };
 
-using GcsCom = ICom<Gcs,Drone>;
-using DroneCom = ICom<Drone,Gcs>;
+using GcsCom = ICom<Gcs>;
+using DroneCom = ICom<Drone>;
 
 
 } // namespace gcs

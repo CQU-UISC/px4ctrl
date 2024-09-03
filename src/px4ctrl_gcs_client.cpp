@@ -14,74 +14,25 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include "px4ctrl_gcs.h"
-#include "px4ctrl_gcs_client.h"
+//using ZMQ
+#include "com/px4ctrl_gcs.h"
+#include "com/px4ctrl_gcs_zmq.h"
+#include "com/px4ctrl_gcs_client.h"
+#include <zmq.hpp>
+#include <zmq_addon.hpp>
+
+
 
 #define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
+#include "com/zmq_proxy.h"
 
-#ifdef __ZMQ_IMPL__
-#include <zmq.hpp>
-#include <zmq_addon.hpp>
-#include "px4ctrl_gcs_zmq.h"
-#endif
+
 
 namespace px4ctrl{
 namespace gcs{
-
-    #ifdef __ZMQ_IMPL__
-    using json=nlohmann::json;
-        ZmqProxy::ZmqProxy(std::string base_dir):ctx(2),
-        xsub_socket(ctx,zmq::socket_type::xsub),
-        xpub_socket(ctx,zmq::socket_type::xpub){
-            std::ifstream config_file(base_dir + "/px4ctrl_zmq.json");
-            json json_file;
-            if (!config_file.is_open()) {
-                spdlog::error("Failed to open config file");
-                exit(1);
-            }
-            config_file >> json_file;
-            spdlog::info("Config file loaded");
-            config_file.close();
-
-            if (!(json_file.contains("xpub_endpoint_bind") && 
-                json_file.contains("xsub_endpoint_bind")
-                )) {
-                spdlog::error("Config file missing key");
-                exit(1);
-            }
-            xpub_endpoint = json_file["xpub_endpoint_bind"].template get<std::string>();
-            xsub_endpoint = json_file["xsub_endpoint_bind"].template get<std::string>();
-
-            // Init XSUB socket
-            try
-            {
-                xsub_socket.bind(xsub_endpoint);
-                xpub_socket.bind(xpub_endpoint);
-            }
-            catch (zmq::error_t e)
-            {
-                spdlog::error("unable bind xsub/xpub,check your config file, err:{}",e.what());
-                exit(1);
-            }
-            proxy_thread = std::thread(&ZmqProxy::run,this);
-        }
-
-        ZmqProxy::~ZmqProxy(){
-            ctx.shutdown();
-            ctx.close();
-            proxy_thread.join();
-        }
-
-        void ZmqProxy::run(){
-            zmq::proxy(xsub_socket, xpub_socket);
-            return;
-        }
-    #endif
-
-
-    GcsClient::GcsClient(std::shared_ptr<GcsCom> gcs_com):gcs(gcs_com){
+    GcsClient::GcsClient(std::shared_ptr<GcsCom> gcs_com,std::shared_ptr<DroneCom> drone_com):gcs(gcs_com),drone(drone_com){
     }
 
     void GcsClient::render_window(){
@@ -125,13 +76,16 @@ namespace gcs{
             ImGui::Text("quat: %.2f %.2f %.2f %.2f",el.quat[0],el.quat[1],el.quat[2],el.quat[3]);
             ImGui::Text("battery: %.2f",el.battery);
             ImGui::Text("Last update: %.2f s",std::chrono::duration_cast<std::chrono::duration<double>>(clock::now()-arrive_time).count());
+            ImGui::PushID(el.drone_id);
             for(const auto &cmd : cmd_list){
                 if(ImGui::Button(command::DRONE_COMMAND_NAME[cmd])){
+                    spdlog::info("Recv Command");
                     gcs_queue.push(
                         Gcs{el.drone_id,(uint8_t)cmd}
                     );
                 }
             }
+            ImGui::PopID();
         }
         if(drone_list.empty()){
             ImGui::Text("No drone");
@@ -144,7 +98,7 @@ namespace gcs{
         if(clock::now()-last_recv_time>std::chrono::milliseconds(100)){
             //recv
             Drone drone_message;
-            while(gcs->receive(drone_message)){
+            while(drone->receive(drone_message)){
                 cb_queue[drone_message.drone_id].push(drone_message);
                 // spdlog::info("recv drone:{}",drone_message.drone_id);
             }
@@ -169,9 +123,6 @@ static void glfw_error_callback(int error, const char* description)
 
 void sigintHandler( int sig ) {
     spdlog::info( "[px4ctrl_gcs] exit..." );
-    #ifdef __ROS_IMPL__
-    ros::shutdown();
-    #endif
     exit(0);
 }
 
@@ -236,14 +187,12 @@ int main(int argc, char* argv[]){
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    #ifdef __ZMQ_IMPL__
-    px4ctrl::gcs::ZmqProxy proxy(config_dir);
+    //Zmq
     std::shared_ptr<px4ctrl::gcs::GcsCom> gcs_com = std::make_shared<px4ctrl::gcs::zmqimpl::GcsZmqCom>(config_dir);
-    #endif
-
+    std::shared_ptr<px4ctrl::gcs::DroneCom> drone_com = std::make_shared<px4ctrl::gcs::zmqimpl::DroneZmqCom>(config_dir);
     //gcs client impl
-    px4ctrl::gcs::GcsClient gcs_client(gcs_com);
 
+    px4ctrl::gcs::GcsClient gcs_client(gcs_com,drone_com);
     //clear_color = Imgui background color
     ImVec4 clear_color = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
     //main loop

@@ -1,5 +1,6 @@
 #pragma once
 #include "px4ctrl_gcs.h"
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -15,11 +16,11 @@ namespace gcs{
             GcsZmqCom(std::string base_dir);
             ~GcsZmqCom();
             
-            zmq::context_t ctx;
+            zmq::context_t  ctx;
             zmq::socket_t pub;
             zmq::socket_t sub;
             bool send(const Gcs&) override;
-            bool receive(Drone&) override;
+            bool receive(Gcs&) override;
             
         private:
             std::mutex mutex_queue;
@@ -27,11 +28,10 @@ namespace gcs{
             bool ok = true;
             void recv();
 
-            std::queue<Drone> cb_queue;
+            std::queue<Gcs> cb_queue;
 
             std::string xpub_endpoint;
             std::string xsub_endpoint;
-            std::string drone_topic;
             std::string gcs_topic;
         };
 
@@ -45,19 +45,18 @@ namespace gcs{
             zmq::socket_t pub;
             zmq::socket_t sub;
             bool send(const Drone&) override;
-            bool receive(Gcs&) override;
+            bool receive(Drone&) override;
         private:
             std::mutex mutex_queue;
             std::thread recv_thread;
             bool ok = true;
             void recv();
 
-            std::queue<Gcs> cb_queue;
+            std::queue<Drone> cb_queue;
 
             std::string xpub_endpoint;
             std::string xsub_endpoint;
             std::string drone_topic;
-            std::string gcs_topic;
         };
     }
 }

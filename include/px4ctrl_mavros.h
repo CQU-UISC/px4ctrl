@@ -24,6 +24,7 @@ public:
     bool force_disarm();
     bool pub_bodyrates_target(const double thrust, const std::array<double, 3>& bodyrates);//目前只实现控制bodyrate
     bool pub_attitude_target(const double thrust, const std::array<double, 4>quat);
+    void pub_allow_cmdctrl(bool allow);
     void spin_once();
 
 private:
@@ -33,7 +34,7 @@ private:
 
     ros::Subscriber vio_odom_sub, ctrl_cmd_sub, user_cmd_sub;
 
-    ros::Publisher px4_cmd_pub;
+    ros::Publisher px4_cmd_pub, allow_cmdctrl_pub;
     ros::ServiceClient px4_set_mode_client, px4_arming_client, px4_cmd_client;
 
     std::shared_ptr<PX4_STATE> px4_state_;

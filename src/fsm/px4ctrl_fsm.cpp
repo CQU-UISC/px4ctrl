@@ -3,7 +3,7 @@
 #include "json.hpp"
 #include "mavros_msgs/ExtendedState.h"
 #include "mavros_msgs/State.h"
-#include "px4ctrl_gcs.h"
+#include "com/px4ctrl_gcs.h"
 #include "px4ctrl_se3_controller.h"
 #include "px4ctrl_state.h"
 #include "quadrotor_msgs/CtrlCommand.h"
@@ -23,15 +23,17 @@ using json = nlohmann::json;
 namespace px4ctrl {
 Px4Ctrl::Px4Ctrl(std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_mavros,
                  std::shared_ptr<PX4_STATE> px4_state,
+                 std::shared_ptr<gcs::GcsCom> gcs_com,
                  std::shared_ptr<gcs::DroneCom> drone_com)
     : Px4Ctrl(std::filesystem::current_path().string(), px4_mavros, px4_state,
-              drone_com) {}
+              gcs_com,drone_com) {}
 
 Px4Ctrl::Px4Ctrl(std::string base_dir,
                  std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_mavros,
                  std::shared_ptr<PX4_STATE> px4_state,
+                 std::shared_ptr<gcs::GcsCom> gcs_com,
                  std::shared_ptr<gcs::DroneCom> drone_com)
-    : px4_mavros(px4_mavros), px4_state(px4_state), base_dir(base_dir),
+    : px4_mavros(px4_mavros), px4_state(px4_state), base_dir(base_dir), gcs_com(gcs_com),
       drone_com(drone_com) {
   spdlog::info("px4ctrl base dir:{}", base_dir);
   assert(px4_mavros != nullptr && px4_state != nullptr);
@@ -311,7 +313,7 @@ void Px4Ctrl::process() {
 
   // recv
   gcs::reset(gcs_message);
-  bool recv_gcs = drone_com->receive(gcs_message);
+  bool recv_gcs = gcs_com->receive(gcs_message);
   if (recv_gcs) {
     last_gcs_time = clock::now();
   }
@@ -642,7 +644,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
           L2.takingoff.start_pos.x(), L2.takingoff.start_pos.y(),
           L2.takingoff.start_pos.z() + params.l2_takeoff_height);
 
-      if ((cur_pos - des_pos).norm() < 0.1) {
+      if ((cur_pos - des_pos).norm() < 0.2) {
         L2 = L2_HOVERING;
         logger_ptr->info("Taking off finished");
         break;
@@ -658,15 +660,15 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.q = L2.takingoff.start_q;
     des.v = Eigen::Vector3d(0, 0, params.l2_takeoff_landing_speed);
     des.yaw = controller->fromQuaternion2yaw(des.q);
-    des.p.z()+=params.l2_takeoff_landing_speed*std::chrono::duration_cast<std::chrono::seconds>(clock::now()-L2.takingoff.last_takeoff_time).count();
+    des.p.z()+=params.l2_takeoff_landing_speed*std::chrono::duration_cast<std::chrono::milliseconds>(clock::now()-L2.takingoff.last_takeoff_time).count()/1000.0f;
     if(des.p.z()>des_pos.z()){
       des.p.z() = des_pos.z();
       des.v = Eigen::Vector3d(0,0,0);
     }
-    logger_ptr->info("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
-    estimate_thrust();
+    logger_ptr->info("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    // estimate_thrust();
     break;
   }
 
@@ -690,7 +692,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
     estimate_thrust();
-
+    logger_ptr->info("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     break;
   }
 
@@ -714,9 +716,9 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.v = Eigen::Vector3d(0, 0, -params.l2_takeoff_landing_speed);
     des.yaw = controller->fromQuaternion2yaw(des.q);
     des.p.z() -= params.l2_takeoff_landing_speed *
-                 std::chrono::duration_cast<std::chrono::seconds>(
+                 std::chrono::duration_cast<std::chrono::milliseconds>(
                      clock::now() - L2.landing.start_time)
-                     .count();
+                     .count()/1000.0f;
 
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
                                             *px4_state->imu.first);
@@ -727,7 +729,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         -0.5; // Constraint 1: target position below real position for
               // POSITION_DEVIATION_C meters.
     const double VELOCITY_THR_C =
-        0.3; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
+        0.2; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
     const double TIME_KEEP_C =
         3.0; // Constraint 3: Time(s) the Constraint 1&2 need to keep.
     bool C12_satisfy =
@@ -804,24 +806,40 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       break;
     }
     switch (px4_state->ctrl_command.first->type) {
-    case quadrotor_msgs::CtrlCommand::ROTORS_FORCE: {
-      logger_ptr->error("not supported type:ROTORS_FORCE");
-      L2 = L2_HOVERING;
-      break;
-    }
-    case quadrotor_msgs::CtrlCommand::THRUST_BODYRATE: {
-      ctrl_cmd.type = controller::ControlType::BODY_RATES;
-      ctrl_cmd.thrust =
-          controller->thrustMap(px4_state->ctrl_command.first->u[0]);
-      ctrl_cmd.bodyrates = Eigen::Vector3d(px4_state->ctrl_command.first->u[1],
-                                           px4_state->ctrl_command.first->u[2],
-                                           px4_state->ctrl_command.first->u[3]);
-      break;
-    }
-    case quadrotor_msgs::CtrlCommand::THRUST_TORQUE: {
-      logger_ptr->error("not supported type:THRUST_TORQUE");
-      break;
-    }
+        case quadrotor_msgs::CtrlCommand::ROTORS_FORCE: {
+          logger_ptr->error("not supported type:ROTORS_FORCE");
+          L2 = L2_HOVERING;
+          break;
+        }
+        case quadrotor_msgs::CtrlCommand::THRUST_BODYRATE: {
+          ctrl_cmd.type = controller::ControlType::BODY_RATES;
+          ctrl_cmd.thrust =
+              controller->thrustMap(px4_state->ctrl_command.first->u[0]);
+          ctrl_cmd.bodyrates = Eigen::Vector3d(px4_state->ctrl_command.first->u[1],
+                                              px4_state->ctrl_command.first->u[2],
+                                              px4_state->ctrl_command.first->u[3]);
+          break;
+        }
+        case quadrotor_msgs::CtrlCommand::THRUST_TORQUE: {
+          logger_ptr->error("not supported type:THRUST_TORQUE");
+          break;
+        }
+        case quadrotor_msgs::CtrlCommand::DESIRE_POS: {
+          controller::DesiredState des;
+          auto des_pos = px4_state->ctrl_command.first->des_pos;
+          auto des_vel = px4_state->ctrl_command.first->des_vel;
+          auto des_acc = px4_state->ctrl_command.first->des_acc;
+          auto des_yaw = px4_state->ctrl_command.first->des_yaw;
+          des.p = Eigen::Vector3d(des_pos[0],des_pos[1],des_pos[2]);
+          des.v = Eigen::Vector3d(des_vel[0],des_vel[1],des_vel[2]);
+          des.a = Eigen::Vector3d(des_acc[0],des_acc[1],des_acc[2]);
+          // des.q = L2.hovering.des_q;
+          des.yaw = des_yaw;
+          ctrl_cmd = controller->calculateControl(des, *px4_state->odom.first,
+                                                  *px4_state->imu.first);
+
+          break;
+        }
     }
     break;
   }
@@ -858,12 +876,14 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
 
     case gcs::command::FORCE_HOVER: {
       L2 = L2_HOVERING;
+      px4_mavros->pub_allow_cmdctrl(false);
       break;
     }
 
     case gcs::command::ALLOW_CMD_CTRL: {
       if (L2.state == L2_HOVERING) {
         L2 = L2_ALLOW_CMD_CTRL;
+        px4_mavros->pub_allow_cmdctrl(true);
       } else {
         logger_ptr->error("Reject! beacuse can not transfer state from {}==>{}",
                           state_map(L2.state), state_map(L2_ALLOW_CMD_CTRL));

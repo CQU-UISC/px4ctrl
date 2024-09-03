@@ -7,6 +7,7 @@
 #include "px4ctrl_state.h"
 #include "ros/init.h"
 #include "ros/time.h"
+#include "std_msgs/Bool.h"
 
 #include <mavros_msgs/ExtendedState.h>
 #include <mavros_msgs/State.h>
@@ -39,6 +40,8 @@ namespace px4ctrl {
         px4_set_mode_client  = nh_.serviceClient< mavros_msgs::SetMode >( "/mavros/set_mode" );
         px4_arming_client = nh_.serviceClient< mavros_msgs::CommandBool >( "/mavros/cmd/arming" );
         px4_cmd_client = nh_.serviceClient<mavros_msgs::CommandLong >("/mavros/cmd/command");
+        
+        allow_cmdctrl_pub = nh_.advertise<std_msgs::Bool>("allow_cmd",10);
 
         spdlog::info("Init px4ros node");
         return;
@@ -125,6 +128,13 @@ namespace px4ctrl {
         px4_cmd_pub.publish( msg );
 
         return true;
+    }
+
+    void PX4CTRL_ROS_BRIDGE::pub_allow_cmdctrl(bool allow){
+        std_msgs::Bool msg;
+        msg.data = allow;
+        allow_cmdctrl_pub.publish(msg);
+        return;
     }
 
     bool PX4CTRL_ROS_BRIDGE::pub_attitude_target(const double thrust, const std::array<double, 4>quat){//w,x,y,z

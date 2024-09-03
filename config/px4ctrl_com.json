@@ -4,5 +4,12 @@
     "xpub_endpoint":"tcp://10.42.0.228:9200",
     "xsub_endpoint":"tcp://10.42.0.228:9210",
     "drone_topic":"/px4ctrl/drone",
-    "gcs_topic":"/px4ctrl/gcs"
+    "gcs_topic":"/px4ctrl/gcs",
+    "serial":{
+        "enable":false,
+        "port":"/dev/ttyS4",
+        "rate":50,
+        "id":0,
+        "hz":1
+    }
 }

@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <thread>
 #include <spdlog/spdlog.h>
@@ -14,18 +15,14 @@
 const uint8_t START = 0xFA;
 const uint8_t END = 0xFB;
 
-const uint8_t NEEDACK = 0b00000001;
-const uint8_t NOACK = 0b00000010;
-const uint8_t ACK = 0b00000100;
-const uint8_t BROADCAST = 0xFF;
+const uint8_t MSG_DRONE = 0x01;
+const uint8_t MSG_GCS = 0x02;
 
 struct SwarmPacket
 {
   uint8_t header = START;
-  uint8_t flag = 0;
-  uint8_t id = 0;
-  uint8_t recv_id = 0;//if recv_id != self_id, drop && if recv_id == 0xFF, recv
-  uint8_t msg_id;//message id for ack
+  uint8_t id = 0;//time span id
+  uint8_t dontdrop = 0;
   uint8_t msg_type;//message type
   uint8_t data[128];//data
   uint8_t end = END;
@@ -35,38 +32,57 @@ struct SwarmPacket
 
 class SerialPort {
  public:
-  explicit SerialPort(std::string port, const int baudrate);
+  explicit SerialPort(std::string port, const int baudrate, int hz);
   ~SerialPort();
 
   bool start();
   bool stop();
   bool isOpen() const;
 
-  int send(const SwarmPacket& packet);
+  void send(const SwarmPacket& packet);
   bool addReceiveCallback(std::function<void(const SwarmPacket& packet)> function);
   
   static constexpr int BUFFER_SIZE = 1024;
 
  private:
+  //serial port
   std::shared_ptr<serial::Serial > serial_;
 
-  void serialThread();
+  //send queue
+  int hz;
+  std::queue<SwarmPacket> send_queue;//queue size = rate (Hz)
 
-  std::function<void(const SwarmPacket& packet)> receive_callback_;
+  //send && recv loop
+  std::thread receive_thread_;
+  void receive_t();
+
+  std::thread send_thread_;
+  void send_t();
+
+  //exit loop
   bool should_exit_{false};
 
-  std::thread serial_thread_;
+  //receive
+  std::function<void(const SwarmPacket& packet)> receive_callback_;
 
+
+
+  //buffer
   static constexpr size_t BS = BUFFER_SIZE;
-
-  //Double buffer for receiving data
   uint8_t receive_buffer_[BS];
   size_t received_length_{0u};
 
+  //for ca
   std::chrono::high_resolution_clock::time_point last_received_time_;
+  std::condition_variable cv;
+  std::mutex cv_mtx_;
+  bool gcs_arrive = false;
 
+  //mutex
   std::mutex rc_mtx_;
-  std::mutex buffer_mtx;
+  std::mutex cb_mtx_;
+  std::mutex send_mtx_;
 
+  //logger
   std::shared_ptr<spdlog::logger> logger_;
 };
