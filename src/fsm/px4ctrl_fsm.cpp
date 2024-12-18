@@ -21,7 +21,7 @@
 using json = nlohmann::json;
 
 namespace px4ctrl {
-Px4Ctrl::Px4Ctrl(std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_mavros,
+Px4Ctrl::Px4Ctrl(std::shared_ptr<Px4CtrlRosBridge> px4_mavros,
                  std::shared_ptr<PX4_STATE> px4_state,
                  std::shared_ptr<gcs::GcsCom> gcs_com,
                  std::shared_ptr<gcs::DroneCom> drone_com)
@@ -29,7 +29,7 @@ Px4Ctrl::Px4Ctrl(std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_mavros,
               gcs_com,drone_com) {}
 
 Px4Ctrl::Px4Ctrl(std::string base_dir,
-                 std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_mavros,
+                 std::shared_ptr<Px4CtrlRosBridge> px4_mavros,
                  std::shared_ptr<PX4_STATE> px4_state,
                  std::shared_ptr<gcs::GcsCom> gcs_com,
                  std::shared_ptr<gcs::DroneCom> drone_com)

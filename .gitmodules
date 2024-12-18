@@ -1,12 +1,6 @@
-[submodule "imgui"]
-	path = imgui
-	url = https://github.com/ocornut/imgui.git
-[submodule "zmq/libzmq"]
-	path = zmq/libzmq
-	url = https://github.com/zeromq/libzmq.git
-[submodule "zmq/cppzmq"]
-	path = zmq/cppzmq
-	url = https://github.com/zeromq/cppzmq.git
-[submodule "serial"]
-	path = serial
-	url = https://github.com/wjwwood/serial.git/
+[submodule "modules/yaml-cpp"]
+	path = modules/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp
+[submodule "modules/FTXUI"]
+	path = modules/FTXUI
+	url = https://github.com/ArthurSonzogni/FTXUI.git

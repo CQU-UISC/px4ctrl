@@ -9,7 +9,6 @@
 #include <string>
 #include <spdlog/spdlog.h>
 
-#include "com/px4ctrl_gcs.h"
 #include "px4ctrl_se3_controller.h"
 #include "px4ctrl_mavros.h"
 #include "px4ctrl_state.h"
@@ -20,7 +19,7 @@ namespace px4ctrl {
     enum Px4CtrlState{
         NOT_CONNECTED,// 没有连接到PX4
         NON_OFFBOARD,//(目前PX4的状态不是OFFBOARD)
-        UNARMED,// (MAVLINK手动ARMING==>通过GCS)
+        UNARMED,// (MAVLINK手动ARMING==>通过UI)
         ARMED,//  (OFFBOARD&&ARMED)
         TAKING_OFF,//  (手动进入)
         HOVERING ,// (TAKING_OFF后自动进入，或者CMD_CTRL命令超时后进入，或者是地面站强制进入, 或者是Guard触发)
@@ -150,8 +149,8 @@ namespace px4ctrl {
 
     class Px4Ctrl{
         public:
-            Px4Ctrl(std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::GcsCom> gcs_com, std::shared_ptr<gcs::DroneCom> drone_com);
-            Px4Ctrl(std::string base_dir, std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::GcsCom> gcs_com,std::shared_ptr<gcs::DroneCom> drone_com);
+            Px4Ctrl(std::shared_ptr<Px4CtrlRosBridge> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::GcsCom> gcs_com, std::shared_ptr<gcs::DroneCom> drone_com);
+            Px4Ctrl(std::string base_dir, std::shared_ptr<Px4CtrlRosBridge> px4_ros, std::shared_ptr<PX4_STATE> px4_state,std::shared_ptr<gcs::GcsCom> gcs_com,std::shared_ptr<gcs::DroneCom> drone_com);
             ~Px4Ctrl() = default;
             
             //run control loop
@@ -182,7 +181,7 @@ namespace px4ctrl {
             L2State L2;
 
             //px4 state
-            std::shared_ptr<PX4CTRL_ROS_BRIDGE> px4_mavros;
+            std::shared_ptr<Px4CtrlRosBridge> px4_mavros;
             std::shared_ptr<PX4_STATE> px4_state;
 
             //controller
@@ -201,14 +200,6 @@ namespace px4ctrl {
 
             //base directory of logging and config
             std::string base_dir;
-
-            //GCS
-            std::shared_ptr<gcs::DroneCom> drone_com;
-            std::shared_ptr<gcs::GcsCom> gcs_com;
-            void fill_drone_message();
-            gcs::Drone drone_message;
-            clock::time_point last_gcs_time;
-            gcs::Gcs gcs_message;
     };
 
     class PositionController;

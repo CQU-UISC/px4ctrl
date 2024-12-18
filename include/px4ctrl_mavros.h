@@ -12,11 +12,11 @@
 
 namespace px4ctrl{
 
-class PX4CTRL_ROS_BRIDGE{
+class Px4CtrlRosBridge{
 
 public:
-    PX4CTRL_ROS_BRIDGE() = delete;
-    PX4CTRL_ROS_BRIDGE(const ros::NodeHandle &nh, std::shared_ptr<PX4_STATE> px4_state);
+    Px4CtrlRosBridge() = delete;
+    Px4CtrlRosBridge(const ros::NodeHandle &nh, std::shared_ptr<PX4_STATE> px4_state);
     
     
     bool set_mode(const std::string &mode);

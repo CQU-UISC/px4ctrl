@@ -19,7 +19,7 @@
 
 namespace px4ctrl {
 
-    PX4CTRL_ROS_BRIDGE::PX4CTRL_ROS_BRIDGE(const ros::NodeHandle& nh, std::shared_ptr<PX4_STATE> px4_state):nh_(nh),px4_state_(px4_state){
+    Px4CtrlRosBridge::Px4CtrlRosBridge(const ros::NodeHandle& nh, std::shared_ptr<PX4_STATE> px4_state):nh_(nh),px4_state_(px4_state){
         px4_state_sub = nh_.subscribe<mavros_msgs::State>( "/mavros/state", 10, build_px4ros_cb(px4_state_->state));
 
         px4_extended_state_sub = nh_.subscribe<mavros_msgs::ExtendedState>( "/mavros/extended_state", 10, build_px4ros_cb(px4_state_->ext_state));
@@ -47,12 +47,12 @@ namespace px4ctrl {
         return;
     }
 
-    void PX4CTRL_ROS_BRIDGE::spin_once(){
+    void Px4CtrlRosBridge::spin_once(){
         ros::spinOnce();
         spdlog::debug("ros spin once");
     }
 
-    bool PX4CTRL_ROS_BRIDGE::set_mode(const std::string &mode){
+    bool Px4CtrlRosBridge::set_mode(const std::string &mode){
         if(px4_state_->state.first->mode == mode){
             spdlog::info("Already in {} mode", mode);
             return true;
@@ -70,7 +70,7 @@ namespace px4ctrl {
         }
     }
 
-    bool PX4CTRL_ROS_BRIDGE::set_arm(const bool arm){
+    bool Px4CtrlRosBridge::set_arm(const bool arm){
         mavros_msgs::CommandBool arm_cmd;
         arm_cmd.request.value = arm;
         if( px4_state_->state.first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
@@ -91,7 +91,7 @@ namespace px4ctrl {
         return true;
     }
 
-    bool PX4CTRL_ROS_BRIDGE::force_disarm(){
+    bool Px4CtrlRosBridge::force_disarm(){
         mavros_msgs::CommandLong disarm_cmd;
         disarm_cmd.request.command = 400;
         disarm_cmd.request.param1 = 0;
@@ -112,7 +112,7 @@ namespace px4ctrl {
         return true;
     }
 
-    bool PX4CTRL_ROS_BRIDGE::pub_bodyrates_target(const double thrust, const std::array<double, 3>& bodyrates){//输入的油门应该是映射后的px4油门
+    bool Px4CtrlRosBridge::pub_bodyrates_target(const double thrust, const std::array<double, 3>& bodyrates){//输入的油门应该是映射后的px4油门
         mavros_msgs::AttitudeTarget msg;
         msg.header.stamp    = ros::Time::now();
         msg.header.frame_id = std::string( "FCU" );
@@ -130,14 +130,14 @@ namespace px4ctrl {
         return true;
     }
 
-    void PX4CTRL_ROS_BRIDGE::pub_allow_cmdctrl(bool allow){
+    void Px4CtrlRosBridge::pub_allow_cmdctrl(bool allow){
         std_msgs::Bool msg;
         msg.data = allow;
         allow_cmdctrl_pub.publish(msg);
         return;
     }
 
-    bool PX4CTRL_ROS_BRIDGE::pub_attitude_target(const double thrust, const std::array<double, 4>quat){//w,x,y,z
+    bool Px4CtrlRosBridge::pub_attitude_target(const double thrust, const std::array<double, 4>quat){//w,x,y,z
         mavros_msgs::AttitudeTarget msg;
         msg.header.stamp    = ros::Time::now();
         msg.header.frame_id = std::string( "FCU" );
