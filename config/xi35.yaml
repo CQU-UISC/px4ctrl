@@ -1,8 +1,19 @@
+px4ctrl:
+  freq: 200
+  
+  l2_takeoff_height: 1.0 #m
+  l2_idle_disarm_time: 10000.0 #ms
+  l2_cmd_ctrl_min_hz: 50 #Hz
+  l2_takeoff_landing_speed: 0.3 #m/s
+  l2_land_position_deviation_c: -0.5 #m
+  l2_land_velocity_thr_c: 0.15 #m/s
+  l2_land_time_keep_c: 1000 #ms
+
 quadrotor: 
   mass: 1.0 #kg
   inertia: [0.01, 0.01, 0.02] #kg*m^2 used for Torque Control
   g: 9.81 #m/s^2 
-  thrustmod: "estimate" #thrustmod: "estimate" or "thrustmap"
+  thrustmod: "ESTIMATE" #ESTIMATE or THRUSTMAP
   thrustmap: [0.0001, 6.4, 0] #thrustmap for all thrust=> thrust = thrustmap[0]*t^2 + thrustmap[1]*t + thrustmap[2] unit: N
   init_hover_thrust: 0.35 #unit, initial hover thrust for iterative thrust estimation
   max_thrust: 1.0 #unit
@@ -19,26 +30,21 @@ controller: #geometry controller
   max_vel_error: 1.5 #max velocity error
   max_vel_int: 1.0 #max integral velocity, integration saturation
 
-  bodyrate_control: false #bodyrate control flag, if true, bodyrate control is enabled else use quaternion(Px4 handle this)
+  type: "ATTITUDE" #ATTITUDE or BODY_RATES
   #bodyrate loop
   Kw: 5.0 #angular velocity error gain
   max_bodyrate_error: 5.0 #max bodyrate error
 
-state_machine:
-  freq: 200
-  L2:
-    takeoff_height: 1.0 #m
-    idle_disarm_time: 10.0 #s
-    cmd_ctrl_min_hz: 50 #Hz
-    takeoff_landing_speed: 0.3 #m/s
-
 guard: 
   freq: 200
-  land_timeout: 5000 #ms after this time, disarm
-
-  timeout_action: "land" #timeout_action: "land" or "disarm"
+  land_timeout: 10000 #ms after this time, disarm
+  # Guard action type: LAND or DISARM or HOLD
   mavros_timeout: 500 #ms
+  mavros_triggered: "LAND"
   odom_timeout: 30 #ms
+  odom_min_hz: 150 #Hz
+  odom_triggered: "LAND"
   ui_timeout: 1000 #ms
-  lowvolt_action: "land" #lowvolt_action: "land" or "disarm"
+  ui_triggered: "HOLD"
   low_battery_voltage: 19.0 #V
+  lowvolt_triggered: "LAND"

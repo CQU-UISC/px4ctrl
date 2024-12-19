@@ -1,5 +1,4 @@
-#include "px4ctrl_se3_controller.h"
-#include "px4ctrl_state.h"
+#include "px4ctrl_controller.h"
 #include <chrono>
 #include <cmath>
 #include <spdlog/spdlog.h>
@@ -7,15 +6,16 @@
 namespace px4ctrl {
 namespace controller {
 
-LinearControl::LinearControl(const ControlParams &params) : params(params) {
+Se3Control::Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params):ctrl_params_(ctrl_params),quad_params_(quad_params) { 
   // TODO
   resetThrustMapping();
+  vel_error_integral_ = Eigen::Vector3d::Zero();
 }
 
 // Output bodyrates and thrust $\in [0,1]$
-ControlCommand LinearControl::calculateControl(const DesiredState &des,
-                                               const nav_msgs::Odometry &odom,
-                                               const sensor_msgs::Imu &imu) {
+ControlCommand Se3Control::calculateControl(const DesiredState &des,
+                                              const nav_msgs::Odometry &odom,
+                                              const sensor_msgs::Imu &imu) {
   ControlCommand ret;
   Eigen::Vector3d err_a, err_v, err_p;
   Eigen::Vector3d ez(0, 0, 1);
@@ -34,13 +34,15 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
 
   err_p = pos - des.p;
   err_v = vel - des.v;
+  vel_error_integral_ += err_v;
+  vel_error_integral_ = vel_error_integral_.cwiseMin(ctrl_params_.max_vel_int).cwiseMax(-ctrl_params_.max_vel_int);
 
 
-  Eigen::Vector3d des_acc = des.a + params.g * ez;
-  des_acc.x() -= limit(err_p.x(),-params.pxy_error_max,params.pxy_error_max)*params.KP_XY + limit(err_v.x(),-params.vxy_error_max,params.vxy_error_max)*params.KD_XY;
-  des_acc.y() -= limit(err_p.y(),-params.pxy_error_max,params.pxy_error_max)*params.KP_XY + limit(err_v.y(),-params.vxy_error_max,params.vxy_error_max)*params.KD_XY;
-  des_acc.z() -= limit(err_p.z(),-params.pz_error_max,params.pz_error_max)*params.KP_Z + limit(err_v.z(),-params.vz_error_max,params.vz_error_max)*params.KD_Z;
-  
+  Eigen::Vector3d des_acc = des.a + quad_params_.g * ez;
+  err_p = err_p.cwiseMin(ctrl_params_.max_pos_error).cwiseMax(-ctrl_params_.max_pos_error);
+  err_v = err_v.cwiseMin(ctrl_params_.max_vel_error).cwiseMax(-ctrl_params_.max_vel_error);
+  des_acc -= ctrl_params_.Kp_pos * err_p + ctrl_params_.Kd_pos * err_v + ctrl_params_.Ki_pos * vel_error_integral_;
+
   double collective_thrust = des_acc.dot(quat * ez);
   ret.thrust = thrustMap(collective_thrust);
 
@@ -59,14 +61,14 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
        Eigen::Quaterniond(des_rot))
           .toRotationMatrix();
 
-  if (params.bodyrates_control) {
+  if (ctrl_params_.type==params::ControlType::BODY_RATES) {
     Eigen::Matrix3d err_rot = des_rot.transpose() * rot;
     Eigen::Vector3d bodyrates =
-        -params.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
-    ret.type = ControlType::BODY_RATES;
+        -ctrl_params_.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
+    ret.type = params::ControlType::BODY_RATES;
     ret.bodyrates = bodyrates;
-  } else {
-    ret.type = ControlType::ATTITUDE;
+  } else if(ctrl_params_.type==params::ControlType::ATTITUDE) {
+    ret.type = params::ControlType::ATTITUDE;
     ret.attitude = Eigen::Quaterniond(des_rot);
   }
 
@@ -81,14 +83,9 @@ ControlCommand LinearControl::calculateControl(const DesiredState &des,
   return ret;
 }
 
-double LinearControl::fromQuaternion2yaw(const Eigen::Quaterniond &q) {
-  double yaw =
-      atan2(2 * (q.x() * q.y() + q.w() * q.z()),
-            q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
-  return yaw;
-}
 
-Eigen::Vector3d LinearControl::vee(const Eigen::Matrix3d &m) {
+
+Eigen::Vector3d Se3Control::vee(const Eigen::Matrix3d &m) {
   Eigen::Vector3d ret;
   ret << m(2, 1) - m(1, 2), m(0, 2) - m(2, 0), m(1, 0) - m(0, 1);
   ret /= 2;
@@ -100,7 +97,7 @@ Eigen::Vector3d LinearControl::vee(const Eigen::Matrix3d &m) {
   des_acc: desired acceleration in world frame
   return: throttle percentage
 */
-double LinearControl::thrustMap(const double collective_thrust) {
+double Se3Control::thrustMap(const double collective_thrust) {
   double throttle_percentage(0.0);
 
   /* compute throttle, thr2acc has been estimated before */
@@ -109,7 +106,7 @@ double LinearControl::thrustMap(const double collective_thrust) {
   return throttle_percentage;
 }
 
-bool LinearControl::estimateThrustModel(const Eigen::Vector3d &est_a,
+bool Se3Control::estimateThrustModel(const Eigen::Vector3d &est_a,
                                         const clock::time_point &est_time) {
   // clock::time_point t_now = clock::now();
   const clock::time_point t_now = est_time;
@@ -147,7 +144,7 @@ bool LinearControl::estimateThrustModel(const Eigen::Vector3d &est_a,
              thr * thr2acc); // collective_thrust = g (imu z value),
                              // collective_thrust/thurst2acc = hover_percentage;
     P = (1 - K * thr) * P / rho2;
-    spdlog::info("Estimated hoving percentage:{}",params.g/thr2acc);
+    spdlog::info("Estimated hoving percentage:{}",quad_params_.g/thr2acc);
     return true;
   }
   return false;
@@ -160,8 +157,8 @@ t = (1+x/g)*h = h + (h/g)*x, h need to be estimated
 简易推力模型是一个线性模型，认为油门值和产生的加速度是一个线性关系，
 会在线根据期望机体z轴加速度和实际机体z轴加速度估计线性模型的斜率.
 */
-void LinearControl::resetThrustMapping() {
-  thr2acc = params.g / params.hover_percentage;
+void Se3Control::resetThrustMapping() {
+  thr2acc = quad_params_.g / quad_params_.init_hover_thrust;
   P = 1e6;
 }
 

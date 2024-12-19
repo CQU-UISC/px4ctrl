@@ -2,7 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=ros,c++,python,linux,macos,windows
 
 .vscode
-
+log
 ### C++ ###
 # Prerequisites
 *.d

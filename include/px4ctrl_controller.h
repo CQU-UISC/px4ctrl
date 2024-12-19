@@ -3,17 +3,21 @@
 /*************************************************************/
 #pragma once
 
-#include "px4ctrl_state.h"
-#include "sensor_msgs/Imu.h"
+#include "px4ctrl_def.h"
+#include "px4ctrl_params.h"
 #include <Eigen/Dense>
 #include <mavros_msgs/AttitudeTarget.h>
 #include <nav_msgs/Odometry.h>
 #include <queue>
-#include <uav_utils/geometry_utils.h>
-
+#include <sensor_msgs/Imu.h>
 namespace px4ctrl {
 namespace controller {
-
+inline double yawFromQuat(const Eigen::Quaterniond &q) {
+  double yaw =
+      atan2(2 * (q.x() * q.y() + q.w() * q.z()),
+            q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
+  return yaw;
+}
 struct DesiredState {
   Eigen::Vector3d p;
   Eigen::Vector3d v;
@@ -43,21 +47,17 @@ struct DesiredState {
     q = Eigen::Quaterniond(
         odom.pose.pose.orientation.w, odom.pose.pose.orientation.x,
         odom.pose.pose.orientation.y, odom.pose.pose.orientation.z);
-    yaw = uav_utils::get_yaw_from_quaternion(q);
+    yaw = yawFromQuat(q);
     yaw_rate = 0;
   };
 };
 
-enum class ControlType{
-  BODY_RATES,
-  ATTITUDE
-};
 
 struct ControlCommand
 // NOTE: 该结构体是控制器的输出
 {
-  ControlType type = ControlType::BODY_RATES;
-  //attitude in local frame
+  params::ControlType type = params::ControlType::BODY_RATES;
+  // attitude in local frame
   Eigen::Quaterniond attitude;
   // Body rates in body frame
   Eigen::Vector3d bodyrates; // [rad/s]
@@ -66,43 +66,43 @@ struct ControlCommand
   double thrust;
 };
 
-struct ControlParams{
-    double mass;
-    double g;
-    double KP_XY, KD_XY, KP_Z, KD_Z, pxy_error_max, vxy_error_max, pz_error_max, vz_error_max;
-    double Ka,Kw;
-    double hover_percentage;
-    double Ix,Iy,Iz;//TODO
-    bool bodyrates_control;
-};
 
-class LinearControl {
+
+class Se3Control {
 public:
-  LinearControl()=delete;
-  LinearControl(const ControlParams& params);
-  ControlCommand calculateControl(const DesiredState &des,const nav_msgs::Odometry &odom,const sensor_msgs::Imu &imu);
+  Se3Control() = delete;
+  Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params);
 
-  //thrust mapping
-  bool estimateThrustModel(const Eigen::Vector3d &est_a, const clock::time_point& est_time);
+  ControlCommand calculateControl(const DesiredState &des,
+                                  const nav_msgs::Odometry &odom,
+                                  const sensor_msgs::Imu &imu);
+
+  // thrust mapping
+  bool estimateThrustModel(const Eigen::Vector3d &est_a,const clock::time_point &est_time);
   void resetThrustMapping();
   double thrustMap(const double collective_thrust);
-  double fromQuaternion2yaw( const Eigen::Quaterniond & q );
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 private:
-  ControlParams params;
+  const params::ControlParams ctrl_params_;
+  const params::QuadrotorParams quad_params_;
+  // integral term for position control
+  Eigen::Vector3d vel_error_integral_;
+
   Eigen::Vector3d vee(const Eigen::Matrix3d &m);
-  template<typename T>
-  inline T limit(const T& value,const T& min,const T& max){
-    if(value>max){
+
+  template <typename T>
+  inline T limit(const T &value, const T &min, const T &max) {
+    if (value > max) {
       return max;
     }
-    if(value<min){
+    if (value < min) {
       return min;
     }
     return value;
   }
-  //Thrust mapping
+
+  // Thrust mapping
   std::queue<std::pair<clock::time_point, double>> timed_thrust;
   static constexpr double kMinNormalizedCollectiveThrust = 3.0;
   // Thrust-accel mapping params

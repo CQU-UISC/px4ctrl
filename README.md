@@ -1,6 +1,7 @@
 # CHANGELOG
 修改了FSM实现
 ---
+jq -s 'map(.[])' build/**/compile_commands.json > build/compile_commands.json
 
 ## PX4 Controller快速使用教程
 PX4 Controller的节点名叫做 "px4ctrl"， 其以Odometry和飞机的IMU为反馈, 接收期望的位置姿态等控制指令，对飞机进行高精度控制.

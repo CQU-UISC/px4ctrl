@@ -1,32 +1,28 @@
-#include "px4ctrl_mavros.h"
-
-#include "mavros_msgs/AttitudeTarget.h"
-#include "mavros_msgs/CommandBool.h"
-#include "mavros_msgs/CommandLong.h"
-#include "mavros_msgs/SetMode.h"
-#include "px4ctrl_state.h"
-#include "ros/init.h"
-#include "ros/time.h"
-#include "std_msgs/Bool.h"
-
+#include "px4ctrl_bridge.h"
+#include <ros/init.h>
+#include <ros/time.h>
+#include <mavros_msgs/AttitudeTarget.h>
+#include <mavros_msgs/CommandBool.h>
+#include <mavros_msgs/CommandLong.h>
+#include <mavros_msgs/SetMode.h>
+#include <std_msgs/Bool.h>
 #include <mavros_msgs/ExtendedState.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
-
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
 namespace px4ctrl {
 
-    Px4CtrlRosBridge::Px4CtrlRosBridge(const ros::NodeHandle& nh, std::shared_ptr<PX4_STATE> px4_state):nh_(nh),px4_state_(px4_state){
+    Px4CtrlRosBridge::Px4CtrlRosBridge(const ros::NodeHandle& nh, std::shared_ptr<Px4State> px4_state):nh_(nh),px4_state_(px4_state){
         px4_state_sub = nh_.subscribe<mavros_msgs::State>( "/mavros/state", 10, build_px4ros_cb(px4_state_->state));
 
         px4_extended_state_sub = nh_.subscribe<mavros_msgs::ExtendedState>( "/mavros/extended_state", 10, build_px4ros_cb(px4_state_->ext_state));
 
         vio_odom_sub = nh_.subscribe<nav_msgs::Odometry>( "odom", 100, build_px4ros_cb(px4_state_->odom), ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay() );
 
-        ctrl_cmd_sub = nh_.subscribe<quadrotor_msgs::CtrlCommand>("cmd", 100, build_px4ros_cb(px4_state_->ctrl_command), ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay() );
+        ctrl_cmd_sub = nh_.subscribe<px4ctrl_lux::Command>("cmd", 100, build_px4ros_cb(px4_state_->ctrl_command), ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay() );
 
         px4_imu_sub = nh_.subscribe<sensor_msgs::Imu>( "/mavros/imu/data",  // Note: do NOT change it to /mavros/imu/data_raw !!!
                                                                     100,
@@ -53,7 +49,7 @@ namespace px4ctrl {
     }
 
     bool Px4CtrlRosBridge::set_mode(const std::string &mode){
-        if(px4_state_->state.first->mode == mode){
+        if(px4_state_->state->value().first->mode == mode){
             spdlog::info("Already in {} mode", mode);
             return true;
         }
@@ -73,11 +69,11 @@ namespace px4ctrl {
     bool Px4CtrlRosBridge::set_arm(const bool arm){
         mavros_msgs::CommandBool arm_cmd;
         arm_cmd.request.value = arm;
-        if( px4_state_->state.first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
+        if( px4_state_->state->value().first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
             spdlog::error("Not in offboard mode, can't arm");
             return false;
         }
-        if( arm==px4_state_->state.first->armed) {
+        if( arm==px4_state_->state->value().first->armed) {
             spdlog::info("Already in {} mode", arm?"ARM":"DISARM");
             return true;
         }
@@ -101,7 +97,7 @@ namespace px4ctrl {
         disarm_cmd.request.param5 = 0;
         disarm_cmd.request.param6 = 0;
         disarm_cmd.request.param7 = 0;
-        if( px4_state_->state.first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
+        if( px4_state_->state->value().first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
             spdlog::error("Not in offboard mode, can't disarm");
             return false;
         }
