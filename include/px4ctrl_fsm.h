@@ -1,11 +1,13 @@
 #pragma once
 
+#include <array>
 #include <memory>
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/sink.h>
 #include <spdlog/spdlog.h>
+#include <utility>
 
 #include "px4ctrl_bridge.h"
 #include "px4ctrl_def.h"
@@ -100,11 +102,18 @@ namespace px4ctrl {
             void run();
             void stop();
 
+            //interface
+            std::array<const Px4CtrlState,3> get_px4_state() const;
+            //force
+            bool force_l2_state(const Px4CtrlState& state);
+
+            std::pair<const Eigen::Vector3d, const Eigen::Quaterniond> get_hovering_pos() const;
+            bool set_hovering_pos(const Eigen::Vector3d& pos, const Eigen::Quaterniond& q);
+
         private:
             bool ok=true;
 
             bool init();
-            bool load_config();
 
             //process, main loop
             clock::time_point last_log_state_time;
@@ -115,8 +124,7 @@ namespace px4ctrl {
             void process_l2(controller::ControlCommand&);
             void proof_alive(controller::ControlCommand&);
 
-
-            void guard();//监视状态（电池，速度，位置，姿态等）&& gcs && px4, true 代表触发
+            void guard();//监视状态（电池，速度，位置，姿态等
             bool faile_safe = false;
 
             //ctrl state

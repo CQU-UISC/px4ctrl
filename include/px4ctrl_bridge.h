@@ -46,7 +46,7 @@ concept IPX4_TIME = requires(T t) {
 };
 
 template <IPX4_ITEM ITEM, IPX4_TIME TIME>
-using IPX4_STATE = std::shared_ptr<Px4Data<std::pair<ITEM, TIME>>>;
+using IPX4_STATE = Px4DataPtr<std::pair<ITEM, TIME>>;
 
 struct Px4State {
   IPX4_STATE<mavros_msgs::State::ConstPtr, clock::time_point> state;
@@ -75,11 +75,14 @@ public:
   bool set_mode(const std::string &mode);
   bool set_arm(const bool arm);
   bool force_disarm();
+  bool enter_offboard();
+  bool exit_offboard();
+  
   bool pub_bodyrates_target(
       const double thrust,
       const std::array<double, 3> &bodyrates); // 目前只实现控制bodyrate
   bool pub_attitude_target(const double thrust,
-                           const std::array<double, 4> quat);
+                            const std::array<double, 4> quat);
   void pub_allow_cmdctrl(bool allow);
   void spin_once();
 

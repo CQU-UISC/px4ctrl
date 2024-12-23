@@ -48,11 +48,13 @@ include_directories(
   ${EIGEN_INCLUDE_DIRS}
 )
 
-add_executable(px4ctrl_node 
+add_executable(px4ctrl_node
+  # src/mockmain.cpp
   src/px4ctrl_node.cpp
   src/fsm/px4ctrl_controller.cpp
   src/fsm/px4ctrl_bridge.cpp
   src/fsm/px4ctrl_fsm.cpp
+  src/fsm/px4ctrl_ui.cpp
 )
 
 target_link_libraries(px4ctrl_node

@@ -135,22 +135,25 @@ void Px4Ctrl::process() {
       px4_state->odom->value().first == nullptr || 
       px4_state->imu->value().first == nullptr ||
       px4_state->battery->value().first == nullptr){
-      spdlog::info("Waiting for All message");
-      if (px4_state->state->value().first == nullptr) {
-        spdlog::info("state message is nullptr");
-      }
-      if (px4_state->ext_state->value().first == nullptr) {
-        spdlog::info("ext_state message is nullptr");
-      }
-      if (px4_state->odom->value().first == nullptr) {
-        spdlog::info("odom message is nullptr");
-      }
-      if (px4_state->imu->value().first == nullptr) {
-        spdlog::info("imu message is nullptr");
-      }
-      if (px4_state->battery->value().first == nullptr) {
-        spdlog::info("battery message is nullptr");
-      }
+        if (timePassedSeconds(last_log_state_time)>2) {
+          spdlog::info("Waiting for All message");
+          if (px4_state->state->value().first == nullptr) {
+            spdlog::info("state message is nullptr");
+          }
+          if (px4_state->ext_state->value().first == nullptr) {
+            spdlog::info("ext_state message is nullptr");
+          }
+          if (px4_state->odom->value().first == nullptr) {
+            spdlog::info("odom message is nullptr");
+          }
+          if (px4_state->imu->value().first == nullptr) {
+            spdlog::info("imu message is nullptr");
+          }
+          if (px4_state->battery->value().first == nullptr) {
+            spdlog::info("battery message is nullptr");
+          }
+          last_log_state_time = clock::now();
+        }
       return;
   }
   /*
@@ -194,8 +197,7 @@ void Px4Ctrl::process() {
   }
   if (timePassed(last_log_state_time) > 1000) {
     last_log_state_time = clock::now();
-    spdlog::info("L0:{},L1:{},L2:{}", state_map(L0.state),
-                     state_map(L1.state), state_map(L2.state));
+    spdlog::info("L0:{},L1:{},L2:{}", state_map(L0.state),state_map(L1.state), state_map(L2.state));
   }
 }
 
@@ -235,16 +237,6 @@ void Px4Ctrl::process_l0(controller::ControlCommand &ctrl_cmd) {
   }
   }
 
-  // use callback
-  // // user input
-  // if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
-  //   if (gcs_message.drone_cmd == gcs::command::ENTER_OFFBOARD) {
-  //     px4_bridge->set_mode(mavros_msgs::State::MODE_PX4_OFFBOARD);
-  //   }
-  //   if (gcs_message.drone_cmd == gcs::command::EXIT_OFFBOARD) {
-  //     px4_bridge->set_mode(mavros_msgs::State::MODE_PX4_LAND);
-  //   }
-  // }
 
   // update state
   if (px4_state->state->value().first->mode == mavros_msgs::State::MODE_PX4_OFFBOARD) {
@@ -282,19 +274,6 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
     break;
   }
   }
-  // 处理用户的输入
-  // if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
-  //   if (gcs_message.drone_cmd == gcs::command::ARM) {
-  //     if (!px4_bridge->set_arm(true)) {
-  //       spdlog::error("Failed to arm");
-  //     }
-  //   }
-  //   if (gcs_message.drone_cmd == gcs::command::DISARM) {
-  //     if (!px4_bridge->set_arm(false)) {
-  //       spdlog::error("Failed to disarm");
-  //     }
-  //   }
-  // }
 
   // update state
   bool armed = px4_state->state->value().first->armed;
@@ -308,8 +287,7 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
   }
 
   if (L1.next_state != L1.state) {
-    spdlog::info("L1 state change:{}->{}", state_map(L1.state),
-                     state_map(L1.next_state));
+    spdlog::info("L1 state change:{}->{}", state_map(L1.state),state_map(L1.next_state));
   }
 
   L1.step();
@@ -359,11 +337,8 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       L2takingoff.start_pos = Eigen::Vector3d(pos.x, pos.y, pos.z);
       L2takingoff.start_q = Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
       L2takingoff.last_takeoff_time = clock::now();
-      spdlog::info("Taking off from:{} {} {}", L2takingoff.start_pos.x(),
-                       L2takingoff.start_pos.y(), L2takingoff.start_pos.z());
-      spdlog::info("Taking off to:{} {} {}", L2takingoff.start_pos.x(),
-                       L2takingoff.start_pos.y(),
-                       L2takingoff.start_pos.z() + px4ctrl_params->statemachine_params.l2_takeoff_height);
+      spdlog::info("Taking off from:{} {} {}", L2takingoff.start_pos.x(),L2takingoff.start_pos.y(), L2takingoff.start_pos.z());
+      spdlog::info("Taking off to:{} {} {}", L2takingoff.start_pos.x(),L2takingoff.start_pos.y(),L2takingoff.start_pos.z() + px4ctrl_params->statemachine_params.l2_takeoff_height);
     } else {
       // check if taking off finished
       const auto &pose = px4_state->odom->value().first->pose.pose;
@@ -462,13 +437,9 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     spdlog::info("Land Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     
     // land_detector parameters
-    const double POSITION_DEVIATION_C =
-        -0.5; // Constraint 1: target position below real position for
-              // POSITION_DEVIATION_C meters.
-    const double VELOCITY_THR_C =
-        0.2; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
-    const double TIME_KEEP_C =
-        3.0; // Constraint 3: Time(s) the Constraint 1&2 need to keep.
+    const double POSITION_DEVIATION_C = px4ctrl_params->statemachine_params.l2_land_position_deviation_c;// Constraint 1: target position below real position for POSITION_DEVIATION_C meters.
+    const double VELOCITY_THR_C = px4ctrl_params->statemachine_params.l2_land_velocity_thr_c; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
+    const double TIME_KEEP_C = px4ctrl_params->statemachine_params.l2_land_time_keep_c;// Constraint 3: Time(ms) the Constraint 1&2 need to keep.
   
     bool C12_satisfy =
         (des.p(2) - px4_state->odom->value().first->pose.pose.position.z) < POSITION_DEVIATION_C &&
@@ -478,7 +449,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         L2landing.time_C12_reached = clock::now();
         L2landing.is_first_time = false;
       }
-      if (timePassedSeconds(L2landing.time_C12_reached) > TIME_KEEP_C)
+      if (timePassed(L2landing.time_C12_reached) > TIME_KEEP_C)
       { // Constraint 3 reached
         spdlog::info("Successfully landed");
         landed = true;
@@ -583,57 +554,34 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
   }
   }
 
-  // // 处理用户的输入
-  // if(px4ctrl::gcs::is_same(params.drone_id,gcs_message.drone_id)){
-  //   switch (gcs_message.drone_cmd) {
-
-  //   case gcs::command::TAKEOFF: {
-  //     if (L2.state == L2_IDLE) {
-  //       L2 = L2_TAKING_OFF;
-  //     } else {
-  //       spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
-  //                         state_map(L2.state), state_map(L2_TAKING_OFF));
-  //     }
-  //     break;
-  //   }
-
-  //   case gcs::command::LAND: {
-  //     if (L2.state == L2_HOVERING) {
-  //       L2 = L2_LANDING;
-  //     } else {
-  //       spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
-  //                         state_map(L2.state), state_map(L2_LANDING));
-  //     }
-  //     break;
-  //   }
-
-  //   case gcs::command::FORCE_HOVER: {
-  //     L2 = L2_HOVERING;
-  //     px4_bridge->pub_allow_cmdctrl(false);
-  //     break;
-  //   }
-
-  //   case gcs::command::ALLOW_CMD_CTRL: {
-  //     if (L2.state == L2_HOVERING) {
-  //       L2 = L2_ALLOW_CMD_CTRL;
-  //       px4_bridge->pub_allow_cmdctrl(true);
-  //     } else {
-  //       spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
-  //                         state_map(L2.state), state_map(L2_ALLOW_CMD_CTRL));
-  //     }
-  //     break;
-  //   }
-  //   default: {
-  //     break;
-  //   }
-  //   }
-  // }
 
   if (L2.next_state != L2.state) {
     spdlog::info("L2 state change:{}->{}", state_map(L2.state),
                      state_map(L2.next_state));
   }
   L2.step(); // 记录这一轮的状态，下一轮的状态，以及上一轮的状态
+}
+
+bool Px4Ctrl::force_l2_state(const Px4CtrlState &state) {
+  L2 = state;
+  spdlog::info("Force L2 state:{}, last_state:{}", state_map(L2.state),
+              state_map(L2.last_state));
+  L2.step();
+  return true;
+}
+
+std::array<const Px4CtrlState,3> Px4Ctrl::get_px4_state() const{
+  return {L0.state,L1.state,L2.state};
+}
+
+std::pair<const Eigen::Vector3d, const Eigen::Quaterniond>  Px4Ctrl::get_hovering_pos() const{
+  return {L2hovering.des_pos,L2hovering.des_q};
+}
+
+bool  Px4Ctrl::set_hovering_pos(const Eigen::Vector3d& pos, const Eigen::Quaterniond& q){
+  L2hovering.des_pos = pos;
+  L2hovering.des_q = q;
+  return true;
 }
 
 } // namespace px4ctrl

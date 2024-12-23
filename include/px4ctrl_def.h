@@ -49,50 +49,47 @@ namespace px4ctrl{
         return static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     }
 
+    // return time duration in milliseconds
     inline double timePassed(const clock::time_point& start){
         return timeDuration(start,clock::now());
     }
 
+    // return time duration in seconds
     inline double timePassedSeconds(const clock::time_point& start){
         return timeDuration(start,clock::now())/1000.0f;
     }
 
     template <typename T>
-    class Px4Data;
+    using Callback =  std::function<void(const T&)>;
+    class Observer;
+    using FuncUnobserve = std::function<void(const Observer*)>;
 
-    /* 
-     * This Class is used for keep callback function
-     */
-    template <typename T>
-    class Px4DataObserver{
-        typedef const std::function<void(const T&) > Callback;
+    class Observer{
         public:
-            inline Px4DataObserver(
-                std::shared_ptr<Px4Data<T>> data
-            ):
-                m_data(data)
+            Observer(FuncUnobserve func):
+                m_func(func)
             {
                 return;
             }
 
-            inline void unobserve(){
-                m_data->removeCallback(this);
-            }
+            void unobserve(){
+                m_func(this);
+                return;
+            };
 
-            inline ~Px4DataObserver(){
+            inline ~Observer(){
                 unobserve();
+                return;
             }
-
         private:
-            std::shared_ptr<Px4Data<T>> m_data;
+            FuncUnobserve m_func;
     };
+
     /*
     * only create on Heap
     */
     template <typename T>
-    class Px4Data:
-    public std::enable_shared_from_this<Px4Data<T>>{
-        typedef std::function<void(const T&) > Callback;
+    class Observable{
         public:
             inline const T& value() const{
                 return m_data;
@@ -107,16 +104,25 @@ namespace px4ctrl{
                 }
             }
 
-            inline std::shared_ptr<Px4DataObserver<T>> observe(
-                Callback callback
+            inline std::shared_ptr<Observer> observe(
+                Callback<T> callback
             ){
-                auto observer = std::make_shared<Px4DataObserver<T>>(this->shared_from_this());
+                auto observer = std::make_shared<Observer>(
+                    std::bind(&Observable<T>::removeObserver,this,std::placeholders::_1)
+                );
                 m_callbacks[observer.get()] = callback;
                 return observer;
             }
 
-            inline void removeCallback(
-                const Px4DataObserver<T>* observer
+        private:
+            friend class Observer;
+            
+            T m_data;
+            // callbacks
+            std::map<Observer*, Callback<T>> m_callbacks;
+
+            inline void removeObserver(
+                const Observer* observer
             ){
                 for(auto it = m_callbacks.begin(); it != m_callbacks.end(); it++){
                     if(it->first == observer){
@@ -125,10 +131,13 @@ namespace px4ctrl{
                     }
                 }
             }
-
-        private:
-            T m_data;
-            // callbacks
-            std::map<Px4DataObserver<T>*, Callback> m_callbacks;
     };
+
+    template <typename T>
+    using Px4Data = Observable<T>;
+
+    template <typename T>
+    using Px4DataPtr = std::shared_ptr<Observable<T>>;
+
+    using Px4DataObserver = std::shared_ptr<Observer>;
 }

@@ -49,6 +49,11 @@ namespace px4ctrl {
     }
 
     bool Px4CtrlRosBridge::set_mode(const std::string &mode){
+        if (px4_state_->state->value().first==nullptr){
+            spdlog::error("px4 state is nullptr");
+            return false;
+        }
+
         if(px4_state_->state->value().first->mode == mode){
             spdlog::info("Already in {} mode", mode);
             return true;
@@ -66,7 +71,19 @@ namespace px4ctrl {
         }
     }
 
+    bool Px4CtrlRosBridge::enter_offboard(){
+        return set_mode(mavros_msgs::State::MODE_PX4_OFFBOARD);
+    }
+
+    bool Px4CtrlRosBridge::exit_offboard(){
+        return set_mode(mavros_msgs::State::MODE_PX4_LAND);
+    }
+
     bool Px4CtrlRosBridge::set_arm(const bool arm){
+        if (px4_state_->state->value().first==nullptr){
+            spdlog::error("px4 state is nullptr");
+            return false;
+        }
         mavros_msgs::CommandBool arm_cmd;
         arm_cmd.request.value = arm;
         if( px4_state_->state->value().first->mode != mavros_msgs::State::MODE_PX4_OFFBOARD){
@@ -88,6 +105,10 @@ namespace px4ctrl {
     }
 
     bool Px4CtrlRosBridge::force_disarm(){
+        if (px4_state_->state->value().first==nullptr){
+            spdlog::error("px4 state is nullptr");
+            return false;
+        }
         mavros_msgs::CommandLong disarm_cmd;
         disarm_cmd.request.command = 400;
         disarm_cmd.request.param1 = 0;
