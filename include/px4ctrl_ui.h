@@ -70,6 +70,7 @@ namespace px4ctrl {
             std::thread _ui_thread,_data_thread;
             
             //ui
+            clock::time_point last_click_time;
             ftxui::ScreenInteractive _screen;
             std::shared_ptr<ftxui::Loop> _loop_ptr;
             ftxui::Component render();

@@ -293,10 +293,20 @@ ftxui::Component Px4CtrlUI::render()
     ui |= ftxui::CatchEvent(
              [&](ftxui::Event event) -> bool
              {
+                
                  // press space to force hover
                  // press j to force disarm
+                 double step_size_vel = 0.1;
+                 double sttep_size_yaw = 0.5;
+                 int time_duration = 1;//
                  if (event.is_character())
                  {
+                     if(timePassedSeconds(last_click_time)>1){
+
+                     }
+                     auto hover_pos =  _px4_ctrl->get_hovering_pos();
+                     auto pos = hover_pos.first;
+                     auto quat = hover_pos.second;
                      if (event == ftxui::Event::Character('j'))
                      {
                          spdlog::info("force disarm");
@@ -306,6 +316,24 @@ ftxui::Component Px4CtrlUI::render()
                      {
                          spdlog::info("force hover");
                          return true;
+                     }
+                     if (event == ftxui::Event::Character('w')){
+                        
+                     }
+                     if (event == ftxui::Event::Character('a')){
+                        
+                     }
+                     if (event == ftxui::Event::Character('s')){
+                        
+                     }
+                     if (event == ftxui::Event::Character('d')){
+                        
+                     }
+                     if (event == ftxui::Event::Character('q')){
+                        
+                     }
+                     if (event == ftxui::Event::Character('e')){
+                        
                      }
                  }
                  return false;
