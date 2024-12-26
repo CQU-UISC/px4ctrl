@@ -118,7 +118,7 @@ void Px4Ctrl::run() {
 ui::ServerPayload Px4Ctrl::fill_server_payload(){
   ui::ServerPayload payload;
   payload.id = 0;//TODO
-  payload.timestamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  payload.timestamp = to_uint64(clock::now());
   auto px4 = px4_state->state->value().first;
   if (px4 == nullptr) {
       payload.battery_voltage = 0;

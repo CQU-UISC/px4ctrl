@@ -16,7 +16,7 @@ namespace ui
 struct ServerPayload
 {
     uint8_t id;
-    std::time_t timestamp;
+    uint64_t timestamp;
     // rigid body
     float pos[3];
     float vel[3];
@@ -59,7 +59,7 @@ const char* const CommandStr[] = {
 struct ClientPayload
 {
     uint8_t id;
-    std::time_t timestamp;
+    uint64_t timestamp;
     // command
     ClientCommand command;
     // data

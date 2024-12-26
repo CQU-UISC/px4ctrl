@@ -60,6 +60,14 @@ namespace px4ctrl{
         return timeDuration(start,clock::now())/1000.0f;
     }
 
+    inline long to_uint64(const clock::time_point& time){
+        return std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch()).count();
+    }
+
+    inline clock::time_point from_uint64(const long& time){
+        return clock::time_point(std::chrono::milliseconds(time));
+    }
+
     template <typename T>
     using Callback =  std::function<void(const T&)>;
     class Observer;
