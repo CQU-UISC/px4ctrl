@@ -21,7 +21,8 @@
 #include <Eigen/Geometry>
 #include <spdlog/spdlog.h>
 
-#include "px4ctrl_def.h"
+#include "types.h"
+
 namespace px4ctrl {
 
 template <typename T, typename... U>

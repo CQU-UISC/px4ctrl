@@ -9,9 +9,11 @@
 #include <spdlog/spdlog.h>
 #include <utility>
 
-#include "px4ctrl_bridge.h"
-#include "px4ctrl_def.h"
-#include "px4ctrl_controller.h"
+#include "bridge.h"
+#include "datas.h"
+#include "server.h"
+#include "types.h"
+#include "controller.h"
 
 namespace px4ctrl {
 /* 
@@ -95,7 +97,8 @@ namespace px4ctrl {
             Px4Ctrl(
                 std::shared_ptr<Px4CtrlRosBridge> px4_bridge,
                 std::shared_ptr<Px4State> px4_state,
-                std::shared_ptr<Px4CtrlParams> px4ctrl_params);
+                std::shared_ptr<Px4CtrlParams> px4ctrl_params,
+                std::shared_ptr<ui::Px4Server> px4_server);
             ~Px4Ctrl() = default;
             
             //run control loop
@@ -138,6 +141,10 @@ namespace px4ctrl {
             //px4 state
             std::shared_ptr<Px4CtrlRosBridge> px4_bridge;
             std::shared_ptr<Px4State> px4_state;
+            std::shared_ptr<ui::Px4Server> px4_server;
+            Px4DataObserver odom_hold, ctrl_hold, client_hold;
+
+            ui::ServerPayload fill_server_payload();
 
             //controller
             std::shared_ptr<controller::Se3Control> controller;

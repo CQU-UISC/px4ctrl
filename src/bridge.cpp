@@ -1,4 +1,4 @@
-#include "px4ctrl_bridge.h"
+#include "bridge.h"
 #include <ros/init.h>
 #include <ros/time.h>
 #include <mavros_msgs/AttitudeTarget.h>

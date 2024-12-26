@@ -2,6 +2,7 @@
 	<node pkg="px4ctrl_lux" type="px4ctrl_node" name="px4ctrl" output="screen">
 		<param name="px4ctrl_base_dir" value="$(find px4ctrl_lux)"/>
 		<param name="px4ctrl_cfg_name" value="xi35.yaml"/>
+		<param name="px4ctrl_zmq_cfg_name" value="zmq.yaml"/>
 		<remap from="~odom" to="/vins_fusion/imu_propagate" />
 		<remap from="~cmd" to="/drone/poscmd"/>
 		<remap from="~allow_cmd" to="/drone/allow_cmd"/>

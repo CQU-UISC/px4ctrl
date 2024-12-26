@@ -3,8 +3,8 @@
 /*************************************************************/
 #pragma once
 
-#include "px4ctrl_def.h"
-#include "px4ctrl_params.h"
+#include "types.h"
+#include "params.h"
 #include <Eigen/Dense>
 #include <mavros_msgs/AttitudeTarget.h>
 #include <nav_msgs/Odometry.h>

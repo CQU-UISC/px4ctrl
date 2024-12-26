@@ -1,0 +1,7 @@
+xsub_endpoint_port: "9200"
+xsub_endpoint_ip: "127.0.0.1"
+xpub_endpoint_port: "9210"
+xpub_endpoint_ip: "127.0.0.1"
+server_topic: "px4s"
+client_topic: "px4c"
+log_topic: "px4log"

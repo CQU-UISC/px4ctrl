@@ -2,8 +2,8 @@
 #include <ostream>
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
-#include "yaml-cpp/exceptions.h"
-#include "yaml-cpp/node/node.h"
+#include <yaml-cpp/exceptions.h>
+#include <yaml-cpp/node/node.h>
 
 namespace px4ctrl{
 

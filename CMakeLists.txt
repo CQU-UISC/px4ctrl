@@ -10,7 +10,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 option(BUILD_TESTS "Build tests" OFF)
 
 add_subdirectory(modules/yaml-cpp)
-add_subdirectory(modules/FTXUI)
+add_subdirectory(modules/libzmq)
+option(CPPZMQ_BUILD_TESTS "" OFF)
+add_subdirectory(modules/cppzmq)
 
 find_package(spdlog REQUIRED)
 find_package(Eigen3 REQUIRED) 
@@ -49,12 +51,11 @@ include_directories(
 )
 
 add_executable(px4ctrl_node
-  # src/mockmain.cpp
-  src/px4ctrl_node.cpp
-  src/fsm/px4ctrl_controller.cpp
-  src/fsm/px4ctrl_bridge.cpp
-  src/fsm/px4ctrl_fsm.cpp
-  src/fsm/px4ctrl_ui.cpp
+  src/node.cpp
+  src/controller.cpp
+  src/bridge.cpp
+  src/fsm.cpp
+  src/server.cpp
 )
 
 target_link_libraries(px4ctrl_node
@@ -62,9 +63,7 @@ target_link_libraries(px4ctrl_node
   PRIVATE ${catkin_LIBRARIES}
   PRIVATE Eigen3::Eigen
   PRIVATE yaml-cpp::yaml-cpp
-  PRIVATE ftxui::screen
-  PRIVATE ftxui::dom
-  PRIVATE ftxui::component
+  PRIVATE cppzmq
 )
 
 if(BUILD_TESTS)
@@ -72,8 +71,8 @@ if(BUILD_TESTS)
   enable_testing()
 
   add_executable(px4ctrl_tests
-    tests/test_def.cpp
-    tests/test_params.cpp
+    tests/def.cpp
+    tests/params.cpp
   )
 
   target_link_libraries(px4ctrl_tests
@@ -82,9 +81,7 @@ if(BUILD_TESTS)
     PRIVATE ${catkin_LIBRARIES}
     PRIVATE Eigen3::Eigen
     PRIVATE yaml-cpp::yaml-cpp
-    PRIVATE ftxui::screen
-    PRIVATE ftxui::dom
-    PRIVATE ftxui::component
+    PRIVATE cppzmq
   )
 
   include(GoogleTest)

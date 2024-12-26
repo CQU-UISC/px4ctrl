@@ -3,12 +3,10 @@
 
 .vscode
 log
+
 ### C++ ###
 # Prerequisites
 *.d
-
-config/log/
-test/*
 
 # Compiled Object files
 *.slo

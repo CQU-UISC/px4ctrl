@@ -2,6 +2,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <chrono>
 
@@ -98,7 +99,11 @@ namespace px4ctrl{
             inline void post(
                 const T& data
             ){
-                m_data = data;
+                {
+                    std::lock_guard<std::mutex> lock(m_mutex);
+                    m_data = data;
+                }
+
                 for(auto it = m_callbacks.begin(); it != m_callbacks.end(); it++){
                     it->second(m_data);
                 }
@@ -116,7 +121,8 @@ namespace px4ctrl{
 
         private:
             friend class Observer;
-            
+
+            std::mutex m_mutex;
             T m_data;
             // callbacks
             std::map<Observer*, Callback<T>> m_callbacks;

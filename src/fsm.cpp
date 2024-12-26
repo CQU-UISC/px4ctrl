@@ -1,6 +1,7 @@
-#include "px4ctrl_fsm.h"
-#include "px4ctrl_controller.h"
-#include "px4ctrl_def.h"
+#include "fsm.h"
+#include "controller.h"
+#include "datas.h"
+#include "types.h"
 
 #include <mavros_msgs/State.h>
 #include <px4ctrl_lux/Command.h>
@@ -16,8 +17,9 @@ namespace px4ctrl {
 Px4Ctrl::Px4Ctrl(
                 std::shared_ptr<Px4CtrlRosBridge> px4_bridge,
                 std::shared_ptr<Px4State> px4_state,
-                std::shared_ptr<Px4CtrlParams> px4ctrl_params)
-  : px4_bridge(px4_bridge), px4_state(px4_state), px4ctrl_params(px4ctrl_params){
+                std::shared_ptr<Px4CtrlParams> px4ctrl_params,
+                std::shared_ptr<ui::Px4Server> px4_server)
+  : px4_bridge(px4_bridge), px4_state(px4_state),px4_server(px4_server),px4ctrl_params(px4ctrl_params){
   assert(px4_bridge != nullptr && px4_state != nullptr && px4ctrl_params != nullptr);
   if (!init()) {
     spdlog::error("Px4Ctrl init failed");
@@ -77,7 +79,7 @@ void Px4Ctrl::run() {
   int cmdctrl_count = 0;
 
    // register
-  auto odom_hold = px4_state->odom->observe([&](auto &odom) {
+  odom_hold = px4_state->odom->observe([&](auto &odom) {
     odom_count++;
     if(timePassed(odom_last_time) > 1000){
       spdlog::info("Odom received:{}",odom_count);
@@ -88,7 +90,7 @@ void Px4Ctrl::run() {
     return;
   });
 
-  auto ctrl_hold = px4_state->ctrl_command->observe([&](auto &cmd) {
+  ctrl_hold = px4_state->ctrl_command->observe([&](auto &cmd) {
     cmdctrl_count++;
     if(timePassed(cmdctrl_last_time)>1000){
       spdlog::info("CtrlCmd received:{}",cmdctrl_count);
@@ -99,12 +101,71 @@ void Px4Ctrl::run() {
     return;
   });
 
+  client_hold = px4_server->client_data.observe([&](auto &cmd) {
+    spdlog::info("FSM ClientCmd received");
+    return;
+  });
+
   while (ok) {
     // process ros message
     px4_bridge->spin_once();
     process();
+    px4_server->pub(fill_server_payload());
     std::this_thread::sleep_for(std::chrono::milliseconds(delta_t));
   }
+}
+
+ui::ServerPayload Px4Ctrl::fill_server_payload(){
+  ui::ServerPayload payload;
+  payload.id = 0;//TODO
+  payload.timestamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  auto px4 = px4_state->state->value().first;
+  if (px4 == nullptr) {
+      payload.battery_voltage = 0;
+  }else{
+      payload.battery_voltage = px4_state->battery->value().first->voltage;
+  }
+  payload.fsm_state[0] = L0.state;
+  payload.fsm_state[1] = L1.state;
+  payload.fsm_state[2] = L2.state;
+  payload.hover_pos[0] = L2hovering.des_pos.x();
+  payload.hover_pos[1] = L2hovering.des_pos.y();
+  payload.hover_pos[2] = L2hovering.des_pos.z();
+  payload.hover_quat[0] = L2hovering.des_q.w();
+  payload.hover_quat[1] = L2hovering.des_q.x();
+  payload.hover_quat[2] = L2hovering.des_q.y();
+  payload.hover_quat[3] = L2hovering.des_q.z();
+  auto odom = px4_state->odom->value().first;
+  if (odom == nullptr) {
+    payload.pos[0] = 0;
+    payload.pos[1] = 0;
+    payload.pos[2] = 0;
+    payload.vel[0] = 0;
+    payload.vel[1] = 0;
+    payload.vel[2] = 0;
+    payload.omega[0] = 0;
+    payload.omega[1] = 0;
+    payload.omega[2] = 0;
+    payload.quat[0] = 1;
+    payload.quat[1] = 0;
+    payload.quat[2] = 0;
+    payload.quat[3] = 0;
+  }else{
+      payload.pos[0] = odom->pose.pose.position.x;
+      payload.pos[1] = odom->pose.pose.position.y;
+      payload.pos[2] = odom->pose.pose.position.z;
+      payload.vel[0] = odom->twist.twist.linear.x;
+      payload.vel[1] = odom->twist.twist.linear.y;
+      payload.vel[2] = odom->twist.twist.linear.z;
+      payload.omega[0] = odom->twist.twist.angular.x;
+      payload.omega[1] = odom->twist.twist.angular.y;
+      payload.omega[2] = odom->twist.twist.angular.z;
+      payload.quat[0] = odom->pose.pose.orientation.w;
+      payload.quat[1] = odom->pose.pose.orientation.x;
+      payload.quat[2] = odom->pose.pose.orientation.y;
+      payload.quat[3] = odom->pose.pose.orientation.z;
+  }
+  return payload;
 }
 
 void Px4Ctrl::apply_control(const controller::ControlCommand &cmd) {
