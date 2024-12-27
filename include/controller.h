@@ -13,6 +13,7 @@
 namespace px4ctrl {
 namespace controller {
 inline double yawFromQuat(const Eigen::Quaterniond &q) {
+  // atan2(2.0f * (w * z + x * y), w * w + x * x - y * y - z * z);
   double yaw =
       atan2(2 * (q.x() * q.y() + q.w() * q.z()),
             q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());

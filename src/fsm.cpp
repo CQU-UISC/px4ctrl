@@ -103,6 +103,7 @@ void Px4Ctrl::run() {
 
   client_hold = px4_server->client_data.observe([&](auto &cmd) {
     spdlog::info("FSM ClientCmd received");
+    client_command_callback(cmd);
     return;
   });
 
@@ -113,6 +114,138 @@ void Px4Ctrl::run() {
     px4_server->pub(fill_server_payload());
     std::this_thread::sleep_for(std::chrono::milliseconds(delta_t));
   }
+}
+
+void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
+    auto px4ctrl_fsm_state = get_px4_state();
+    spdlog::info("client command:{}", ui::CommandStr[static_cast<int>(payload.command)]);
+    switch (payload.command)
+    {
+      case ui::ClientCommand::HEARTBEAT:
+        break;
+      case ui::ClientCommand::ARM:
+        if (!px4_bridge->set_arm(true))
+        {
+            spdlog::error("arm failed");
+        }
+        break;
+      case ui::ClientCommand::FORCE_DISARM:
+        if (!px4_bridge->force_disarm())
+        {
+            spdlog::error("force disarm failed");
+        }
+        break;
+      case ui::ClientCommand::ENTER_OFFBOARD:
+        if (!px4_bridge->enter_offboard())
+          {
+              spdlog::error("enter offboard failed");
+          }
+        break;
+      case ui::ClientCommand::EXIT_OFFBOARD:
+        if (!px4_bridge->exit_offboard())
+        {
+            spdlog::error("exit offboard failed");
+        }
+        break;
+      case ui::ClientCommand::TAKEOFF:
+        if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
+        {
+            spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
+            break;
+        } 
+        if (px4ctrl_fsm_state[2] == Px4CtrlState::L2_IDLE)
+        {
+            force_l2_state(Px4CtrlState::L2_TAKING_OFF);
+        }
+        else
+        {
+            spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
+                          state_map(px4ctrl_fsm_state[2]),
+                          state_map(Px4CtrlState::L2_TAKING_OFF));
+        }
+        break;
+      case ui::ClientCommand::LAND:
+        if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
+        {
+            spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
+            break;
+        } 
+        if (px4ctrl_fsm_state[2] == Px4CtrlState::L2_HOVERING)
+        {
+            force_l2_state(Px4CtrlState::L2_LANDING);
+        }
+        else
+        {
+            spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
+                          state_map(px4ctrl_fsm_state[2]),
+                          state_map(Px4CtrlState::L2_LANDING));
+        }
+      case ui::ClientCommand::FORCE_HOVER:
+        if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
+        {
+            spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
+            break;
+        } 
+        if (px4ctrl_fsm_state[2] == Px4CtrlState::L2_IDLE)
+        {
+            force_l2_state(Px4CtrlState::L2_HOVERING);
+            px4_bridge->pub_allow_cmdctrl(false);
+        }
+        else
+        {
+            spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
+                          state_map(px4ctrl_fsm_state[2]),
+                          state_map(Px4CtrlState::L2_HOVERING));
+        }
+        break;
+      case ui::ClientCommand::ALLOW_CMD_CTRL:
+        if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
+        {
+            spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
+            break;
+        } 
+        if (px4ctrl_fsm_state[2] == Px4CtrlState::L2_HOVERING)
+        {
+            force_l2_state(Px4CtrlState::L2_ALLOW_CMD_CTRL);
+            px4_bridge->pub_allow_cmdctrl(true);
+        }
+        else
+        {
+            spdlog::error("Reject! beacuse can not transfer state from {}==>{}",
+                          state_map(px4ctrl_fsm_state[2]),
+                          state_map(Px4CtrlState::L2_ALLOW_CMD_CTRL));
+        }
+        break;
+      case ui::ClientCommand::CHANGE_HOVER_POS:
+        if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
+        {
+            spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
+            break;
+        } 
+        if(px4ctrl_fsm_state[2]!=Px4CtrlState::L2_HOVERING){
+            spdlog::error("Reject! beacuse L2!=HOVERING, L2:{}",state_map(px4ctrl_fsm_state[2]));
+            break;
+        }
+        double data[7];
+        std::memcpy(data,payload.data,sizeof(data));
+        bool reject = false;
+        for(auto& d:data){
+            if(std::isnan(d)){
+                reject = true;
+                spdlog::error("Reject! beacuse data contains nan");
+                break;
+            }
+        }
+        if(reject){
+            break;
+        }
+        Eigen::Vector3d pos(data[0],data[1],data[2]);
+        Eigen::Quaterniond q(data[3],data[4],data[5],data[6]);
+        set_hovering_pos(pos,q);
+        break;
+    }
+
+    last_client_cmd_time = from_uint64(payload.timestamp);
 }
 
 ui::ServerPayload Px4Ctrl::fill_server_payload(){

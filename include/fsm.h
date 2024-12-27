@@ -144,7 +144,9 @@ namespace px4ctrl {
             std::shared_ptr<ui::Px4Server> px4_server;
             Px4DataObserver odom_hold, ctrl_hold, client_hold;
 
+            clock::time_point last_client_cmd_time;
             ui::ServerPayload fill_server_payload();
+            void client_command_callback(const ui::ClientPayload& payload);
 
             //controller
             std::shared_ptr<controller::Se3Control> controller;
