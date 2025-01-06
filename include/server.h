@@ -1,5 +1,4 @@
 #pragma once
-#include <functional>
 #include <mutex>
 #include <spdlog/common.h>
 #include <spdlog/sinks/base_sink.h>

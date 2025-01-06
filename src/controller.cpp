@@ -34,13 +34,12 @@ ControlCommand Se3Control::calculateControl(const DesiredState &des,
 
   err_p = pos - des.p;
   err_v = vel - des.v;
-  vel_error_integral_ += err_v;
-  vel_error_integral_ = vel_error_integral_.cwiseMin(ctrl_params_.max_vel_int).cwiseMax(-ctrl_params_.max_vel_int);
-
 
   Eigen::Vector3d des_acc = des.a + quad_params_.g * ez;
   err_p = err_p.cwiseMin(ctrl_params_.max_pos_error).cwiseMax(-ctrl_params_.max_pos_error);
   err_v = err_v.cwiseMin(ctrl_params_.max_vel_error).cwiseMax(-ctrl_params_.max_vel_error);
+  vel_error_integral_ += err_v*ctrl_params_.Kd_pos+err_p*ctrl_params_.Kp_pos;
+  vel_error_integral_ = vel_error_integral_.cwiseMin(ctrl_params_.max_vel_int).cwiseMax(-ctrl_params_.max_vel_int);
   des_acc -= ctrl_params_.Kp_pos * err_p + ctrl_params_.Kd_pos * err_v + ctrl_params_.Ki_pos * vel_error_integral_;
 
   double collective_thrust = des_acc.dot(quat * ez);

@@ -38,34 +38,8 @@ bool Px4Ctrl::init() {
   return true;
 }
 
+// TODO
 void Px4Ctrl::guard() {
-  // clock::time_point now = clock::now();
-  // std::chrono::milliseconds mavros_state =
-  //     std::chrono::duration_cast<std::chrono::milliseconds>(
-  //         now - px4_state->state.second);
-  // std::chrono::milliseconds odom_state =
-  //     std::chrono::duration_cast<std::chrono::milliseconds>(
-  //         now - px4_state->odom.second);
-  // std::chrono::milliseconds gcs_state =
-  //     std::chrono::duration_cast<std::chrono::milliseconds>(now -
-  //                                                           last_gcs_time);
-  // // check gcs
-  // if (gcs_state.count() > params.guard_params.gcs_timeout) {
-  //   return GuardStatus::GCS_TIMEOUT;
-  // }
-  // // check mavros
-  // if (mavros_state.count() > params.guard_params.mavros_timeout) {
-  //   return GuardStatus::MAVROS_TIMEOUT;
-  // }
-  // // check odom
-  // if (odom_state.count() > params.guard_params.odom_timeout) {
-  //   return GuardStatus::ODOM_TIMEOUT;
-  // }
-  // if (px4_state->battery.first->voltage <
-  //     params.guard_params.low_battery_voltage) {
-  //   return GuardStatus::LOW_VOLTAGE;
-  // }
-  // return GuardStatus::OK;
 }
 
 void Px4Ctrl::stop() { ok = false; }
@@ -180,13 +154,14 @@ void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
                           state_map(px4ctrl_fsm_state[2]),
                           state_map(Px4CtrlState::L2_LANDING));
         }
+        break;
       case ui::ClientCommand::FORCE_HOVER:
         if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
         {
             spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
             break;
         } 
-        if (px4ctrl_fsm_state[2] == Px4CtrlState::L2_IDLE)
+        if (px4ctrl_fsm_state[2] != Px4CtrlState::L2_IDLE)
         {
             force_l2_state(Px4CtrlState::L2_HOVERING);
             px4_bridge->pub_allow_cmdctrl(false);
@@ -247,16 +222,18 @@ void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
 
     last_client_cmd_time = from_uint64(payload.timestamp);
 }
-
+//TODO remove redundant log
+//TODO add more data: odom hz, cmdctrl hz and so on
 ui::ServerPayload Px4Ctrl::fill_server_payload(){
   ui::ServerPayload payload;
   payload.id = 0;//TODO
   payload.timestamp = to_uint64(clock::now());
   auto px4 = px4_state->state->value().first;
-  if (px4 == nullptr) {
+  auto battery = px4_state->battery->value().first;
+  if (battery == nullptr) {
       payload.battery_voltage = 0;
   }else{
-      payload.battery_voltage = px4_state->battery->value().first->voltage;
+      payload.battery_voltage = battery->voltage;
   }
   payload.fsm_state[0] = L0.state;
   payload.fsm_state[1] = L1.state;
@@ -566,8 +543,8 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     }
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
-    spdlog::info("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
-    // estimate_thrust();
+    spdlog::info("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    estimate_thrust();
     break;
   }
 
@@ -598,7 +575,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     estimate_thrust();
-    spdlog::info("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    spdlog::info("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     break;
   }
 
@@ -628,8 +605,6 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     bool landed = false;
-    spdlog::info("Land Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
-    
     // land_detector parameters
     const double POSITION_DEVIATION_C = px4ctrl_params->statemachine_params.l2_land_position_deviation_c;// Constraint 1: target position below real position for POSITION_DEVIATION_C meters.
     const double VELOCITY_THR_C = px4ctrl_params->statemachine_params.l2_land_velocity_thr_c; // Constraint 2: velocity below VELOCITY_MIN_C m/s.
@@ -649,12 +624,8 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         landed = true;
       }
     }
-
-    spdlog::info("Desired position: {},{},{}", des.p(0), des.p(1), des.p(2));
-    spdlog::info("Current position: {},{},{}", px4_state->odom->value().first->pose.pose.position.x,
-                px4_state->odom->value().first->pose.pose.position.y,
-                px4_state->odom->value().first->pose.pose.position.z);
-    spdlog::info("Landing: C12_satisfy:{}, landed:{}, Landed_state:{}",
+    spdlog::info("Land Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\n",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    spdlog::info("Landing: C12_satisfy:{}, landed:{}, Landed_state:{}\r",
     C12_satisfy, landed, px4_state->ext_state->value().first->landed_state);
 
     if (landed==true) {
