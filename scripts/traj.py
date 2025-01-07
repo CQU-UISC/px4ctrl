@@ -14,7 +14,7 @@ class ExampleTraj:
         on_shutdown(lambda: setattr(self, 'ok', False))
         start = False
         last = Time.now()
-        circle = self.example_lemniscate([0, 0], 1, 1)
+        circle = self.example_circle([0, 0], 3, 1)
         rate = Rate(100)
         while self.ok:
             if self.allow_cmd:
@@ -44,24 +44,29 @@ class ExampleTraj:
         self.allow_cmd = msg.data
 
     @staticmethod
-    def example_circle(center, radius, height):
+    def example_circle(initpos, radius, height):
+        start = [radius, 0, 1]
+        offset_x = initpos[0] - start[0]
+        offset_y = initpos[1] - start[1]
         def circle(t):
-            x = center[0] + radius * math.cos(t)
-            y = center[1] + radius * math.sin(t)
+            x = offset_x + radius * math.cos(t)
+            y = offset_y + radius * math.sin(t)
             z = height
             vx = -radius * math.sin(t)
             vy = radius * math.cos(t)
             vz = 0
-            # heading to the center
-            yaw = math.atan2(center[1] - y, center[0] - x)
+            yaw = 0
             return [x, y, z, vx, vy, vz, yaw]
         return circle
     
     @staticmethod
-    def example_lemniscate(center, radius, height):
+    def example_lemniscate(initpos, radius, height):
+        start = [radius, 0, 1]
+        offset_x = initpos[0] - start[0]
+        offset_y = initpos[1] - start[1]
         def lemniscate(t):
-            x = radius * math.cos(t)+ center[0]
-            y = radius * math.sin(2*t)/2 + center[1]
+            x = radius * math.cos(t)+  offset_x
+            y = radius * math.sin(2*t)/2 + offset_y
             z = height
             sin = math.sin
             cos = math.cos
@@ -69,7 +74,7 @@ class ExampleTraj:
             vy = radius * cos(2*t)
             vz = 0
             # heading to the center
-            yaw = math.atan2(center[1] - y, center[0] - x)
+            yaw = 0
             return [x, y, z, vx, vy, vz, yaw]
         return lemniscate
     
