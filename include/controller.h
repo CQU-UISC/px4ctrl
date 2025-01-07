@@ -19,6 +19,7 @@ inline double yawFromQuat(const Eigen::Quaterniond &q) {
             q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
   return yaw;
 }
+
 struct DesiredState {
   Eigen::Vector3d p;
   Eigen::Vector3d v;
@@ -27,6 +28,7 @@ struct DesiredState {
   Eigen::Quaterniond q;
   double yaw;
   double yaw_rate;
+  bool control_attitude;
 
   DesiredState() {
     p = Eigen::Vector3d::Zero();
@@ -36,6 +38,7 @@ struct DesiredState {
     q = Eigen::Quaterniond::Identity();
     yaw = 0;
     yaw_rate = 0;
+    control_attitude = false;//TODO
   };
 
   DesiredState(const nav_msgs::Odometry &odom) {
@@ -50,6 +53,7 @@ struct DesiredState {
         odom.pose.pose.orientation.y, odom.pose.pose.orientation.z);
     yaw = yawFromQuat(q);
     yaw_rate = 0;
+    control_attitude = false;
   };
 };
 

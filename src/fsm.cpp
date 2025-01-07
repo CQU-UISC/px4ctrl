@@ -46,32 +46,17 @@ void Px4Ctrl::stop() { ok = false; }
 
 void Px4Ctrl::run() {
   int delta_t = int(1000 / px4ctrl_params->statemachine_params.freq);
-  
-  clock::time_point odom_last_time = clock::now();
-  int odom_count = 0;
-  clock::time_point cmdctrl_last_time = clock::now();
-  int cmdctrl_count = 0;
-
+  odom_last_time = clock::now();
+  cmdctrl_last_time = clock::now();
+  // last_client_cmd_time = clock::now();
    // register
   odom_hold = px4_state->odom->observe([&](auto &odom) {
     odom_count++;
-    if(timePassed(odom_last_time) > 1000){
-      spdlog::info("Odom received:{}",odom_count);
-      odom_hz = odom_count;
-      odom_count = 0;
-      odom_last_time = clock::now();
-    }
     return;
   });
 
   ctrl_hold = px4_state->ctrl_command->observe([&](auto &cmd) {
     cmdctrl_count++;
-    if(timePassed(cmdctrl_last_time)>1000){
-      spdlog::info("CtrlCmd received:{}",cmdctrl_count);
-      cmdctrl_hz = cmdctrl_count;
-      cmdctrl_count = 0;
-      cmdctrl_last_time = clock::now();
-    }
     return;
   });
 
@@ -84,12 +69,27 @@ void Px4Ctrl::run() {
   while (ok) {
     // process ros message
     px4_bridge->spin_once();
+    compute_hz();
     process();
     px4_server->pub(fill_server_payload());
     std::this_thread::sleep_for(std::chrono::milliseconds(delta_t));
   }
 }
 
+void Px4Ctrl::compute_hz() {
+    if(timePassed(odom_last_time) > 1000){
+      odom_hz = odom_count;
+      odom_count = 0;
+      odom_last_time = clock::now();
+    }
+    if(timePassed(cmdctrl_last_time)>1000){
+      cmdctrl_hz = cmdctrl_count;
+      cmdctrl_count = 0;
+      cmdctrl_last_time = clock::now();
+    }
+}
+
+// TODO add go to pose
 void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
     auto px4ctrl_fsm_state = get_px4_state();
     spdlog::info("client command:{}", ui::CommandStr[static_cast<int>(payload.command)]);
@@ -275,6 +275,8 @@ ui::ServerPayload Px4Ctrl::fill_server_payload(){
       payload.quat[2] = odom->pose.pose.orientation.y;
       payload.quat[3] = odom->pose.pose.orientation.z;
   }
+  payload.odom_hz = odom_hz;
+  payload.cmdctrl_hz = cmdctrl_hz;
   return payload;
 }
 
@@ -368,7 +370,7 @@ void Px4Ctrl::process() {
   }
   if (timePassed(last_log_state_time) > 1000) {
     last_log_state_time = clock::now();
-    spdlog::info("L0:{},L1:{},L2:{}", state_map(L0.state),state_map(L1.state), state_map(L2.state));
+    spdlog::debug("L0:{},L1:{},L2:{}", state_map(L0.state),state_map(L1.state), state_map(L2.state));
   }
 }
 
@@ -543,7 +545,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     }
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
-    spdlog::info("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    spdlog::debug("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     estimate_thrust();
     break;
   }
@@ -575,7 +577,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     estimate_thrust();
-    spdlog::info("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    spdlog::debug("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     break;
   }
 
@@ -624,8 +626,8 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
         landed = true;
       }
     }
-    spdlog::info("Land Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\n",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
-    spdlog::info("Landing: C12_satisfy:{}, landed:{}, Landed_state:{}\r",
+    spdlog::debug("Land Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\n",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
+    spdlog::debug("Landing: C12_satisfy:{}, landed:{}, Landed_state:{}\r",
     C12_satisfy, landed, px4_state->ext_state->value().first->landed_state);
 
     if (landed==true) {
@@ -644,6 +646,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       L2 = L2_CMD_CTRL;
       break;
     }else{
+      spdlog::error("cmdctrl_hz:{} is less than min_hz:{}",cmdctrl_hz,px4ctrl_params->statemachine_params.l2_cmd_ctrl_min_hz);
       L2 = L2_HOVERING;
     }
 

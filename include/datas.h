@@ -32,6 +32,8 @@ struct ServerPayload
     float thrust_map[3]; // estimate or real
     float hover_pos[3];
     float hover_quat[4]; // actually only have yaw
+    float odom_hz;
+    float cmdctrl_hz;
 };
 
 enum class ClientCommand

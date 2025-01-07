@@ -143,7 +143,7 @@ bool Se3Control::estimateThrustModel(const Eigen::Vector3d &est_a,
              thr * thr2acc); // collective_thrust = g (imu z value),
                              // collective_thrust/thurst2acc = hover_percentage;
     P = (1 - K * thr) * P / rho2;
-    spdlog::info("Estimated hoving percentage:{}",quad_params_.g/thr2acc);
+    spdlog::debug("Estimated hoving percentage:{}",quad_params_.g/thr2acc);
     return true;
   }
   return false;

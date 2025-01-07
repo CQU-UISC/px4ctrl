@@ -142,7 +142,6 @@ namespace px4ctrl {
             std::shared_ptr<Px4CtrlRosBridge> px4_bridge;
             std::shared_ptr<Px4State> px4_state;
             std::shared_ptr<ui::Px4Server> px4_server;
-            Px4DataObserver odom_hold, ctrl_hold, client_hold;
 
             clock::time_point last_client_cmd_time;
             ui::ServerPayload fill_server_payload();
@@ -153,8 +152,13 @@ namespace px4ctrl {
             void apply_control(const controller::ControlCommand &cmd);
             
             // misc
+            int odom_count = 0;
+            int cmdctrl_count = 0;
             int odom_hz = 0;
             int cmdctrl_hz = 0;
+            clock::time_point odom_last_time,cmdctrl_last_time;
+            Px4DataObserver odom_hold, ctrl_hold, client_hold;
+            void compute_hz();
             
             //config
             std::shared_ptr<Px4CtrlParams> px4ctrl_params;
