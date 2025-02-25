@@ -1,5 +1,5 @@
 import math
-from px4ctrl_lux.msg import Command
+from px4msgs.msg import Command
 from rospy import Publisher, init_node, Subscriber, on_shutdown,Time, Rate
 from std_msgs.msg import Bool
 

@@ -22,7 +22,7 @@ namespace px4ctrl {
 
         vio_odom_sub = nh_.subscribe<nav_msgs::Odometry>( "odom", 100, build_px4ros_cb(px4_state_->odom), ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay() );
 
-        ctrl_cmd_sub = nh_.subscribe<px4ctrl_lux::Command>("cmd", 100, build_px4ros_cb(px4_state_->ctrl_command), ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay() );
+        ctrl_cmd_sub = nh_.subscribe<px4msgs::Command>("cmd", 100, build_px4ros_cb(px4_state_->ctrl_command), ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay() );
 
         px4_imu_sub = nh_.subscribe<sensor_msgs::Imu>( "/mavros/imu/data",  // Note: do NOT change it to /mavros/imu/data_raw !!!
                                                                     100,

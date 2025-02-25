@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <spdlog/fmt/bundled/core.h>
+#include <fmt/format.h>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>

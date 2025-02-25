@@ -23,25 +23,13 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   geometry_msgs
   sensor_msgs
+  nav_msgs
   mavros
-  message_generation
-)
-
-
-add_message_files(
-  FILES
-  Command.msg
-)
-
-generate_messages(
-    DEPENDENCIES
-    geometry_msgs
-    nav_msgs
+  px4msgs
 )
 
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS roscpp rospy geometry_msgs sensor_msgs nav_msgs mavros px4msgs
 )
 
 include_directories(
@@ -66,6 +54,7 @@ target_link_libraries(px4ctrl_node
   PRIVATE cppzmq
 )
 
+add_dependencies(px4ctrl_node ${catkin_EXPORTED_TARGETS})
 if(BUILD_TESTS)
   find_package(GTest REQUIRED)
   enable_testing()

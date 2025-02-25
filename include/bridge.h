@@ -13,7 +13,7 @@
 #include <mavros_msgs/ExtendedState.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Odometry.h>
-#include <px4ctrl_lux/Command.h>
+#include <px4msgs/Command.h>
 #include <sensor_msgs/BatteryState.h>
 #include <sensor_msgs/Imu.h>
 
@@ -38,7 +38,7 @@ concept IPX4_ITEM = requires(T t) {
   }
   -> any_of<mavros_msgs::State::ConstPtr, mavros_msgs::ExtendedState::ConstPtr,
             sensor_msgs::BatteryState::ConstPtr, nav_msgs::Odometry::ConstPtr,
-            sensor_msgs::Imu::ConstPtr, px4ctrl_lux::Command::ConstPtr>;
+            sensor_msgs::Imu::ConstPtr, px4msgs::Command::ConstPtr>;
 };
 
 template <typename T>
@@ -55,7 +55,7 @@ struct Px4State {
   IPX4_STATE<sensor_msgs::BatteryState::ConstPtr, clock::time_point> battery;
   IPX4_STATE<nav_msgs::Odometry::ConstPtr, clock::time_point> odom;
   IPX4_STATE<sensor_msgs::Imu::ConstPtr, clock::time_point> imu;
-  IPX4_STATE<px4ctrl_lux::Command::ConstPtr, clock::time_point> ctrl_command;
+  IPX4_STATE<px4msgs::Command::ConstPtr, clock::time_point> ctrl_command;
 
   Px4State(){
     state = std::make_shared<Px4Data<std::pair<mavros_msgs::State::ConstPtr, clock::time_point>>>();
@@ -63,7 +63,7 @@ struct Px4State {
     battery = std::make_shared<Px4Data<std::pair<sensor_msgs::BatteryState::ConstPtr, clock::time_point>>>();
     odom = std::make_shared<Px4Data<std::pair<nav_msgs::Odometry::ConstPtr, clock::time_point>>>();
     imu = std::make_shared<Px4Data<std::pair<sensor_msgs::Imu::ConstPtr, clock::time_point>>>();
-    ctrl_command = std::make_shared<Px4Data<std::pair<px4ctrl_lux::Command::ConstPtr, clock::time_point>>>();
+    ctrl_command = std::make_shared<Px4Data<std::pair<px4msgs::Command::ConstPtr, clock::time_point>>>();
   }
 };
 
