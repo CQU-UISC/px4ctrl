@@ -14,8 +14,8 @@ Se3Control::Se3Control(const params::ControlParams &ctrl_params, const params::Q
 
 // Output bodyrates and thrust $\in [0,1]$
 ControlCommand Se3Control::calculateControl(const DesiredState &des,
-                                              const nav_msgs::Odometry &odom,
-                                              const sensor_msgs::Imu &imu) {
+                                              const nav_msgs::msg::Odometry &odom,
+                                              const sensor_msgs::msg::Imu &imu) {
   ControlCommand ret;
   Eigen::Vector3d err_a, err_v, err_p;
   Eigen::Vector3d ez(0, 0, 1);

@@ -1,28 +1,21 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>px4ctrl_lux</name>
   <version>0.0.0</version>
   <description>A package to control multi-copters using PX4 platform</description>
   <maintainer email="lux@cqu.edu.cn">uav</maintainer>
-
   <license>GPLv3</license>
-  
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>mavros_msgs</build_depend>
-  <build_depend>px4msgs</build_depend>
 
-  <run_depend>message_runtime</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>mavros_msgs</run_depend>
-  <run_depend>px4msgs</run_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>mavros_msgs</depend>
+  <depend>px4msgs</depend>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

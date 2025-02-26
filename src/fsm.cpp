@@ -3,9 +3,8 @@
 #include "datas.h"
 #include "types.h"
 
-#include <Eigen/src/Geometry/Quaternion.h>
-#include <mavros_msgs/State.h>
-#include <px4msgs/Command.h>
+#include <mavros_msgs/msg/state.hpp>
+#include <px4msgs/msg/command.hpp>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -109,6 +108,8 @@ void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
         {
             spdlog::error("force disarm failed");
         }
+        // if success then reset thrust mapping
+        controller->resetThrustMapping();
         break;
       case ui::ClientCommand::ENTER_OFFBOARD:
         if (!px4_bridge->enter_offboard())
@@ -414,7 +415,7 @@ void Px4Ctrl::process_l0(controller::ControlCommand &ctrl_cmd) {
 
 
   // update state
-  if (px4_state->state->value().first->mode == mavros_msgs::State::MODE_PX4_OFFBOARD) {
+  if (px4_state->state->value().first->mode == mavros_msgs::msg::State::MODE_PX4_OFFBOARD) {
     L0 = L0_OFFBOARD;
   } else {
     L0 = L0_NON_OFFBOARD;
@@ -681,12 +682,12 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       break;
     }
     switch (px4_state->ctrl_command->value().first->type) {
-        case px4msgs::Command::ROTORS_FORCE: {
+        case px4msgs::msg::Command::ROTORS_FORCE: {
           spdlog::error("not supported type:ROTORS_FORCE");
           L2 = L2_HOVERING;
           break;
         }
-        case px4msgs::Command::THRUST_BODYRATE: {
+        case px4msgs::msg::Command::THRUST_BODYRATE: {
           ctrl_cmd.type = params::ControlType::BODY_RATES;
           ctrl_cmd.thrust =
               controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
@@ -695,11 +696,11 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
                                               px4_state->ctrl_command->value().first->u[3]);
           break;
         }
-        case px4msgs::Command::THRUST_TORQUE: {
+        case px4msgs::msg::Command::THRUST_TORQUE: {
           spdlog::error("not supported type:THRUST_TORQUE");
           break;
         }
-        case px4msgs::Command::DESIRED_POS: {
+        case px4msgs::msg::Command::DESIRED_POS: {
           controller::DesiredState des;
           auto des_pos = px4_state->ctrl_command->value().first->pos;
           auto des_vel = px4_state->ctrl_command->value().first->vel;
@@ -717,7 +718,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
                                                   *px4_state->imu->value().first);
           break;
         }
-        case px4msgs::Command::THRUST_QUAT:{
+        case px4msgs::msg::Command::THRUST_QUAT:{
           ctrl_cmd.type = params::ControlType::ATTITUDE;
           auto des_quat = px4_state->ctrl_command->value().first->quat;
           ctrl_cmd.thrust = controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);

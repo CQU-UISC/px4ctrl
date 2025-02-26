@@ -3,12 +3,13 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <filesystem>
-#include <ros/ros.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/node.hpp>
 
 #include "fsm.h"
 #include "bridge.h"
-#include "ros/init.h"
 #include "server.h"
 
 std::shared_ptr<px4ctrl::Px4Ctrl> px4ctrl_fsm;
@@ -19,13 +20,16 @@ void sigintHandler( int sig ) {
 }
 
 int main( int argc, char* argv[] ) {
-    ros::init( argc, argv, "px4ctrl" );
-    ros::NodeHandle nh( "~" );
-    
+    rclcpp::init(argc, argv);
+    auto node =  std::make_shared<rclcpp::Node>("px4ctrl");
     std::string base_dir, cfg_name, zmq_cfg_name;
-    nh.param( "px4ctrl_base_dir", base_dir, std::string( "" ));
-    nh.param( "px4ctrl_cfg_name", cfg_name, std::string( "px4ctrl.yaml" ));
-    nh.param( "px4ctrl_zmq_cfg_name", zmq_cfg_name, std::string( "zmq.yaml" ));
+    node->declare_parameter("px4ctrl_base_dir", "");
+    node->declare_parameter("px4ctrl_cfg_name", "px4ctrl.yaml");
+    node->declare_parameter("px4ctrl_zmq_cfg_name", "zmq.yaml");
+    node->get_parameter("px4ctrl_base_dir", base_dir);
+    node->get_parameter("px4ctrl_cfg_name", cfg_name);
+    node->get_parameter("px4ctrl_zmq_cfg_name", zmq_cfg_name);
+    
     // check if cfg exists
     std::string cfg_file = base_dir + "/config/"+cfg_name;
     std::string zmq_cfg_file = base_dir + "/config/"+zmq_cfg_name;
@@ -64,11 +68,11 @@ int main( int argc, char* argv[] ) {
 
     std::shared_ptr<px4ctrl::Px4CtrlParams> px4ctrl_params = std::make_shared<px4ctrl::Px4CtrlParams>(cfg);
     std::shared_ptr<px4ctrl::Px4State> px4_state = std::make_shared<px4ctrl::Px4State>();
-    std::shared_ptr<px4ctrl::Px4CtrlRosBridge> px4_bridge = std::make_shared<px4ctrl::Px4CtrlRosBridge>(nh,px4_state);
+    std::shared_ptr<px4ctrl::Px4CtrlRosBridge> px4_bridge = std::make_shared<px4ctrl::Px4CtrlRosBridge>(node, px4_state);
     px4ctrl_fsm = std::make_shared<px4ctrl::Px4Ctrl>(px4_bridge, px4_state, px4ctrl_params, px4ctrl_server);
     signal( SIGINT, sigintHandler );
     px4ctrl_fsm->run();
-    ros::shutdown();
+    rclcpp::shutdown();
     ctx.shutdown();
     ctx.close();
     spdlog::info( "[PX4Ctrl] exited" );

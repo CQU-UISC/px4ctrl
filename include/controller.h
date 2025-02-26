@@ -1,15 +1,18 @@
 /*************************************************************/
-/* Acknowledgement: github.com/uzh-rpg/rpg_quadrotor_control */
+/* Acknowledgement:                                          */
+/* github.com/uzh-rpg/rpg_quadrotor_control                  */
+/* github.com/fastlab                                        */
 /*************************************************************/
 #pragma once
 
 #include "types.h"
 #include "params.h"
 #include <Eigen/Dense>
-#include <mavros_msgs/AttitudeTarget.h>
-#include <nav_msgs/Odometry.h>
+#include <mavros_msgs/msg/attitude_target.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <queue>
-#include <sensor_msgs/Imu.h>
+
 namespace px4ctrl {
 namespace controller {
 inline double yawFromQuat(const Eigen::Quaterniond &q) {
@@ -41,7 +44,7 @@ struct DesiredState {
     control_attitude = false;//TODO
   };
 
-  DesiredState(const nav_msgs::Odometry &odom) {
+  DesiredState(const nav_msgs::msg::Odometry &odom) {
     p = Eigen::Vector3d(odom.pose.pose.position.x, odom.pose.pose.position.y,
                         odom.pose.pose.position.z);
     v = Eigen::Vector3d(odom.twist.twist.linear.x, odom.twist.twist.linear.y,
@@ -79,8 +82,8 @@ public:
   Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params);
 
   ControlCommand calculateControl(const DesiredState &des,
-                                  const nav_msgs::Odometry &odom,
-                                  const sensor_msgs::Imu &imu);
+                                  const nav_msgs::msg::Odometry &odom,
+                                  const sensor_msgs::msg::Imu &imu);
 
   // thrust mapping
   bool estimateThrustModel(const Eigen::Vector3d &est_a,const clock::time_point &est_time);

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project(px4ctrl_lux)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -14,27 +14,20 @@ add_subdirectory(modules/libzmq)
 option(CPPZMQ_BUILD_TESTS "" OFF)
 add_subdirectory(modules/cppzmq)
 add_subdirectory(modules/spdlog)
-# find_package(spdlog REQUIRED)
+
 find_package(Eigen3 REQUIRED) 
 
 # Build on ros
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
-  geometry_msgs
-  sensor_msgs
-  nav_msgs
-  mavros_msgs
-  px4msgs
-)
-
-catkin_package(
-  CATKIN_DEPENDS roscpp rospy geometry_msgs sensor_msgs nav_msgs mavros_msgs px4msgs
-)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(mavros_msgs REQUIRED)
+find_package(px4msgs REQUIRED)
 
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
 )
 
@@ -46,15 +39,35 @@ add_executable(px4ctrl_node
   src/server.cpp
 )
 
-target_link_libraries(px4ctrl_node
-  PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
-  PRIVATE ${catkin_LIBRARIES}
-  PRIVATE Eigen3::Eigen
-  PRIVATE yaml-cpp::yaml-cpp
-  PRIVATE cppzmq
+ament_target_dependencies(px4ctrl_node
+  rclcpp
+  geometry_msgs
+  sensor_msgs
+  nav_msgs
+  mavros_msgs
+  px4msgs
 )
 
-add_dependencies(px4ctrl_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(px4ctrl_node
+  spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
+  Eigen3::Eigen
+  yaml-cpp::yaml-cpp
+  cppzmq
+)
+
+install(TARGETS px4ctrl_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_package()
+
 if(BUILD_TESTS)
   find_package(GTest REQUIRED)
   enable_testing()
@@ -67,7 +80,6 @@ if(BUILD_TESTS)
   target_link_libraries(px4ctrl_tests
     PRIVATE GTest::GTest GTest::Main
     PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
-    PRIVATE ${catkin_LIBRARIES}
     PRIVATE Eigen3::Eigen
     PRIVATE yaml-cpp::yaml-cpp
     PRIVATE cppzmq
