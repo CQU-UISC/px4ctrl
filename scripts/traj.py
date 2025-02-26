@@ -1,94 +1,129 @@
 import math
+import rclpy
+from rclpy.node import Node
 from px4msgs.msg import Command
-from rospy import Publisher, init_node, Subscriber, on_shutdown,Time, Rate
 from std_msgs.msg import Bool
+from rclpy.clock import Clock
+from rclpy.time import Time
 
-class ExampleTraj:
+class ExampleTraj(Node):
     def __init__(self):
-        init_node('traj')
-        self.pub = Publisher('/drone/poscmd', Command, queue_size=20)
-        self.sub = Subscriber('/drone/allow_cmd', Bool, self.callback)
+        super().__init__('traj_node')
+        
+        # Create publisher for position commands
+        self.cmd_pub = self.create_publisher(
+            Command, 
+            '/drone/poscmd', 
+            10
+        )
+        
+        # Create subscriber for allow commands
+        self.allow_sub = self.create_subscription(
+            Bool,
+            '/drone/allow_cmd',
+            self.allow_callback,
+            10
+        )
+        
+        # Initialize variables
         self.allow_cmd = False
+        self.start_time = None
+        self.traj_started = False
+        
+        # Create timer for control loop (100Hz)
+        self.timer = self.create_timer(0.01, self.run_loop)
+        
+        # Initialize trajectory generator
+        self.current_traj = self.example_circle([0.0, 0.0], 3.0, 1.0)
+        
+        self.get_logger().info("Trajectory node initialized")
 
-        self.ok = True
-        on_shutdown(lambda: setattr(self, 'ok', False))
-        start = False
-        last = Time.now()
-        circle = self.example_circle([0, 0], 3, 1)
-        rate = Rate(100)
-        while self.ok:
-            if self.allow_cmd:
-                if not start:
-                    print("TRIGGERED")
-                    start = True
-                    last = Time.now()
-                dt = Time.now() - last
-                # dt*=2
-                x, y, z, vx, vy, vz, yaw = circle(dt.to_sec())
-                cmd = Command()
-                cmd.type = Command.DESIRED_POS
-                cmd.pos = [x, y, z]
-                cmd.yaw = yaw
-                cmd.vel = [vx, vy, vz]
-                self.pub.publish(cmd)
-            else:
-                cmd = Command()
-                cmd.type = Command.THRUST_BODYRATE
-                cmd.u = [0, 0, 0, 0]
-                self.pub.publish(cmd)
-                start = False
-            rate.sleep()
-            
-
-    def callback(self, msg:Bool):
+    def allow_callback(self, msg):
+        """Handle allow command callback"""
         self.allow_cmd = msg.data
+        if self.allow_cmd and not self.traj_started:
+            self.get_logger().info("Trajectory started!")
+            self.start_time = self.get_clock().now()
+            self.traj_started = True
+        elif not self.allow_cmd and self.traj_started:
+            self.get_logger().info("Trajectory stopped")
+            self.traj_started = False
+
+    def run_loop(self):
+        """Main control loop"""
+        # self.get_logger().info(f"Current time: {self.get_clock().now().nanoseconds * 1e-9}")
+        if self.allow_cmd and self.traj_started:
+            # Calculate elapsed time
+            elapsed_time = (self.get_clock().now() - self.start_time).nanoseconds * 1e-9
+            
+            # Generate trajectory point
+            x, y, z, vx, vy, vz, yaw = self.current_traj(elapsed_time)
+            
+            # Create and publish command
+            cmd = Command()
+            cmd.header.stamp = self.get_clock().now().to_msg()
+            cmd.type = Command.DESIRED_POS
+            cmd.pos = [float(x), float(y), float(z)]
+            cmd.vel = [float(vx), float(vy), float(vz)]
+            cmd.yaw = float(yaw)
+            self.cmd_pub.publish(cmd)
+        else:
+            # Publish zero commands when not allowed
+            cmd = Command()
+            cmd.header.stamp = self.get_clock().now().to_msg()
+            cmd.type = Command.THRUST_BODYRATE
+            cmd.u = [0.0, 0.0, 0.0, 0.0]
+            self.cmd_pub.publish(cmd)
 
     @staticmethod
     def example_circle(initpos, radius, height):
-        start = [radius, 0, 1]
+        """Generate circular trajectory"""
+        start = [radius, 0.0, 1.0]
         offset_x = initpos[0] - start[0]
         offset_y = initpos[1] - start[1]
+        
         def circle(t):
             x = offset_x + radius * math.cos(t)
             y = offset_y + radius * math.sin(t)
             z = height
             vx = -radius * math.sin(t)
             vy = radius * math.cos(t)
-            vz = 0
-            yaw = 0
-            return [x, y, z, vx, vy, vz, yaw]
+            vz = 0.0
+            yaw = 0.0
+            return x, y, z, vx, vy, vz, yaw
+        
         return circle
-    
+
     @staticmethod
     def example_lemniscate(initpos, radius, height):
-        start = [radius, 0, 1]
+        """Generate lemniscate (figure-8) trajectory"""
+        start = [radius, 0.0, 1.0]
         offset_x = initpos[0] - start[0]
         offset_y = initpos[1] - start[1]
+        
         def lemniscate(t):
-            x = radius * math.cos(t)+  offset_x
-            y = radius * math.sin(2*t)/2 + offset_y
+            x = radius * math.cos(t) + offset_x
+            y = (radius * math.sin(2 * t)) / 2 + offset_y
             z = height
-            sin = math.sin
-            cos = math.cos
-            vx = -radius * sin(t)
-            vy = radius * cos(2*t)
-            vz = 0
-            # heading to the center
-            yaw = 0
-            return [x, y, z, vx, vy, vz, yaw]
+            vx = -radius * math.sin(t)
+            vy = radius * math.cos(2 * t)
+            vz = 0.0
+            yaw = 0.0
+            return x, y, z, vx, vy, vz, yaw
+        
         return lemniscate
+
+def main(args=None):
+    rclpy.init(args=args)
     
+    try:
+        traj_node = ExampleTraj()
+        rclpy.spin(traj_node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        traj_node.destroy_node()
+        rclpy.shutdown()
+
 if __name__ == '__main__':
-    ExampleTraj()
-    # Plot
-    # from matplotlib import pyplot as plt
-    # import numpy as np
-    # loop = ExampleTraj.example_lemniscate([0, 0], 1, 1)
-    # t = np.linspace(0, 2*np.pi, 100)
-    # x = []
-    # y = []
-    # for i in t:
-    #     x.append(loop(i)[0])
-    #     y.append(loop(i)[1])
-    # plt.plot(x, y)
-    # plt.show()
+    main()
