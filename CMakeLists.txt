@@ -13,8 +13,8 @@ add_subdirectory(modules/yaml-cpp)
 add_subdirectory(modules/libzmq)
 option(CPPZMQ_BUILD_TESTS "" OFF)
 add_subdirectory(modules/cppzmq)
-
-find_package(spdlog REQUIRED)
+add_subdirectory(modules/spdlog)
+# find_package(spdlog REQUIRED)
 find_package(Eigen3 REQUIRED) 
 
 # Build on ros
@@ -24,12 +24,12 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   nav_msgs
-  mavros
+  mavros_msgs
   px4msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS roscpp rospy geometry_msgs sensor_msgs nav_msgs mavros px4msgs
+  CATKIN_DEPENDS roscpp rospy geometry_msgs sensor_msgs nav_msgs mavros_msgs px4msgs
 )
 
 include_directories(
