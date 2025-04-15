@@ -102,12 +102,18 @@ void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
         if (!px4_bridge->set_arm(true))
         {
             spdlog::error("arm failed");
+        }else{
+            spdlog::info("arm success, reset thrust mapping");
+            controller->resetThrustMapping();
         }
         break;
       case ui::ClientCommand::FORCE_DISARM:
         if (!px4_bridge->force_disarm())
         {
             spdlog::error("force disarm failed");
+        }else{
+            spdlog::info("force disarm success, reset thrust mapping");
+            controller->resetThrustMapping();
         }
         break;
       case ui::ClientCommand::ENTER_OFFBOARD:
@@ -639,6 +645,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       if(!px4_bridge->force_disarm()){
         spdlog::error("Failed to force disarm");
       }
+      spdlog::info("Landed, reset thrust mapping");
       controller->resetThrustMapping();
       L2 = L2_IDLE;
     }
