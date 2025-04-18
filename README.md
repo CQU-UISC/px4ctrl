@@ -45,7 +45,7 @@ TODO
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] 添加MPC控制器
+- [ ] 使用DDS实现
 - [ ] 添加安全控制方法（odom timeout等状况，紧急；降落等）
 - [ ] move zmq proxy
 - [x] 存在Bug， forece hover 姿态控制会出问题

@@ -7,6 +7,3 @@
 [submodule "modules/cppzmq"]
 	path = modules/cppzmq
 	url = https://github.com/zeromq/cppzmq.git
-[submodule "modules/spdlog"]
-	path = modules/spdlog
-	url = https://github.com/gabime/spdlog.git

@@ -20,6 +20,7 @@ void sigintHandler( int sig ) {
 }
 
 int main( int argc, char* argv[] ) {
+    spdlog::info( "[PX4Ctrl] start" );
     rclcpp::init(argc, argv);
     auto node =  std::make_shared<rclcpp::Node>("px4ctrl");
     std::string base_dir, cfg_name, zmq_cfg_name;

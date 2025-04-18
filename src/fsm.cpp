@@ -4,7 +4,7 @@
 #include "types.h"
 
 #include <mavros_msgs/msg/state.hpp>
-#include <px4msgs/msg/command.hpp>
+#include <px4ctrl_msgs/msg/command.hpp>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -682,12 +682,12 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       break;
     }
     switch (px4_state->ctrl_command->value().first->type) {
-        case px4msgs::msg::Command::ROTORS_FORCE: {
+        case px4ctrl_msgs::msg::Command::ROTORS_FORCE: {
           spdlog::error("not supported type:ROTORS_FORCE");
           L2 = L2_HOVERING;
           break;
         }
-        case px4msgs::msg::Command::THRUST_BODYRATE: {
+        case px4ctrl_msgs::msg::Command::THRUST_BODYRATE: {
           ctrl_cmd.type = params::ControlType::BODY_RATES;
           ctrl_cmd.thrust =
               controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
@@ -696,11 +696,11 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
                                               px4_state->ctrl_command->value().first->u[3]);
           break;
         }
-        case px4msgs::msg::Command::THRUST_TORQUE: {
+        case px4ctrl_msgs::msg::Command::THRUST_TORQUE: {
           spdlog::error("not supported type:THRUST_TORQUE");
           break;
         }
-        case px4msgs::msg::Command::DESIRED_POS: {
+        case px4ctrl_msgs::msg::Command::DESIRED_POS: {
           controller::DesiredState des;
           auto des_pos = px4_state->ctrl_command->value().first->pos;
           auto des_vel = px4_state->ctrl_command->value().first->vel;
@@ -718,7 +718,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
                                                   *px4_state->imu->value().first);
           break;
         }
-        case px4msgs::msg::Command::THRUST_QUAT:{
+        case px4ctrl_msgs::msg::Command::THRUST_QUAT:{
           ctrl_cmd.type = params::ControlType::ATTITUDE;
           auto des_quat = px4_state->ctrl_command->value().first->quat;
           ctrl_cmd.thrust = controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);

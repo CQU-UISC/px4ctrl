@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
-project(px4ctrl_lux)
+project(px4ctrl)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Debug)
@@ -13,9 +13,9 @@ add_subdirectory(modules/yaml-cpp)
 add_subdirectory(modules/libzmq)
 option(CPPZMQ_BUILD_TESTS "" OFF)
 add_subdirectory(modules/cppzmq)
-add_subdirectory(modules/spdlog)
 
 find_package(Eigen3 REQUIRED) 
+find_package(spdlog REQUIRED)
 
 # Build on ros
 find_package(ament_cmake REQUIRED)
@@ -24,7 +24,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(mavros_msgs REQUIRED)
-find_package(px4msgs REQUIRED)
+find_package(px4ctrl_msgs REQUIRED)
+find_package(px4_msgs REQUIRED)
 
 include_directories(
   include
@@ -45,7 +46,8 @@ ament_target_dependencies(px4ctrl_node
   sensor_msgs
   nav_msgs
   mavros_msgs
-  px4msgs
+  px4ctrl_msgs
+  px4_msgs
 )
 
 target_link_libraries(px4ctrl_node

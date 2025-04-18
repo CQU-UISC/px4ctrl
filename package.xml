@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>px4ctrl_lux</name>
+  <name>px4ctrl</name>
   <version>0.0.0</version>
   <description>A package to control multi-copters using PX4 platform</description>
   <maintainer email="lux@cqu.edu.cn">uav</maintainer>
@@ -13,7 +13,8 @@
   <depend>sensor_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>mavros_msgs</depend>
-  <depend>px4msgs</depend>
+  <depend>px4ctrl_msgs</depend>
+  <depend>px4_msgs</depend>
   
   <export>
     <build_type>ament_cmake</build_type>

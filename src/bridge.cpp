@@ -13,7 +13,7 @@ namespace px4ctrl {
           vio_odom_sub = node->create_subscription<nav_msgs::msg::Odometry>(
             "odom", rclcpp::SensorDataQoS(), build_px4ros_cb(px4_state_->odom));
         
-          ctrl_cmd_sub = node->create_subscription<px4msgs::msg::Command>(
+          ctrl_cmd_sub = node->create_subscription<px4ctrl_msgs::msg::Command>(
             "cmd", rclcpp::SensorDataQoS(), build_px4ros_cb(px4_state_->ctrl_command));
         
           px4_imu_sub = node->create_subscription<sensor_msgs::msg::Imu>(
