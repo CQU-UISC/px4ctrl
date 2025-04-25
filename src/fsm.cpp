@@ -1,6 +1,8 @@
 #include "fsm.h"
+#include "bridge.h"
 #include "controller.h"
 #include "datas.h"
+#include "params.h"
 #include "types.h"
 
 #include <mavros_msgs/msg/state.hpp>
@@ -38,10 +40,6 @@ bool Px4Ctrl::init() {
   return true;
 }
 
-// TODO
-void Px4Ctrl::guard() {
-}
-
 void Px4Ctrl::stop() { ok = false; }
 
 void Px4Ctrl::run() {
@@ -49,14 +47,68 @@ void Px4Ctrl::run() {
   odom_last_time = clock::now();
   cmdctrl_last_time = clock::now();
   // last_client_cmd_time = clock::now();
-   // register
+  // register
   odom_hold = px4_state->odom->observe([&](auto &odom) {
     odom_count++;
     return;
   });
 
   ctrl_hold = px4_state->ctrl_command->observe([&](auto &cmd) {
-    cmdctrl_count++;
+    // TODO now just pub control command and let fsm decide which should be accept
+    if(L2.state==L2_CMD_CTRL){
+        // direct apply control
+        // do cmd conversation
+        controller::ControlCommand ctrl_cmd;
+        ctrl_cmd.source = controller::ControlSource::CMD;
+        switch (px4_state->ctrl_command->value().first->type) {
+          case px4ctrl_msgs::msg::Command::ROTORS_FORCE: {
+            // TODO
+            spdlog::error("not supported type:ROTORS_FORCE");
+            break;
+          }
+          case px4ctrl_msgs::msg::Command::THRUST_BODYRATE: {
+            ctrl_cmd.type = controller::ControlType::BODY_RATES;
+            ctrl_cmd.thrust =
+                controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
+            ctrl_cmd.bodyrates = Eigen::Vector3d(px4_state->ctrl_command->value().first->u[1],
+                                                px4_state->ctrl_command->value().first->u[2],
+                                                px4_state->ctrl_command->value().first->u[3]);
+            break;
+          }
+          case px4ctrl_msgs::msg::Command::THRUST_TORQUE: {
+            // TODO
+            spdlog::error("not supported type:THRUST_TORQUE");
+            break;
+          }
+          case px4ctrl_msgs::msg::Command::DESIRED_POS: {
+            controller::DesiredState des;
+            auto des_pos = px4_state->ctrl_command->value().first->pos;
+            auto des_vel = px4_state->ctrl_command->value().first->vel;
+            auto des_acc = px4_state->ctrl_command->value().first->acc;
+            auto des_jerk = px4_state->ctrl_command->value().first->jerk;
+            auto des_yaw = px4_state->ctrl_command->value().first->yaw;
+            auto des_quat = px4_state->ctrl_command->value().first->quat;
+            des.p = Eigen::Vector3d(des_pos[0],des_pos[1],des_pos[2]);
+            des.v = Eigen::Vector3d(des_vel[0],des_vel[1],des_vel[2]);
+            des.a = Eigen::Vector3d(des_acc[0],des_acc[1],des_acc[2]);
+            des.j = Eigen::Vector3d(des_jerk[0],des_jerk[1],des_jerk[2]);
+            des.q = Eigen::Quaterniond(des_quat[0],des_quat[1],des_quat[2],des_quat[3]); //w,x,y,z
+            des.yaw = des_yaw;
+            ctrl_cmd = controller->runControl(des, *px4_state->odom->value().first,
+                                                    *px4_state->imu->value().first);
+            break;
+          }
+          case px4ctrl_msgs::msg::Command::THRUST_QUAT:{
+            ctrl_cmd.type = controller::ControlType::ATTITUDE;
+            auto des_quat = px4_state->ctrl_command->value().first->quat;
+            ctrl_cmd.thrust = controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
+            ctrl_cmd.attitude =  Eigen::Quaterniond(des_quat[0],des_quat[1],des_quat[2],des_quat[3]); //w,x,y,z
+            break;
+          }
+      }
+      apply_control(ctrl_cmd,controller::ControlSource::CMD);
+    }
+    cmdctrl_count++; 
     return;
   });
 
@@ -70,26 +122,53 @@ void Px4Ctrl::run() {
     // process ros message
     px4_bridge->spin_once();
     compute_hz();
-    process();
+    if(!guard()){
+      process();
+    }
     px4_server->pub(fill_server_payload());
     std::this_thread::sleep_for(std::chrono::milliseconds(delta_t));
   }
 }
 
-void Px4Ctrl::compute_hz() {
-    if(timePassed(odom_last_time) > 1000){
-      odom_hz = odom_count;
-      odom_count = 0;
-      odom_last_time = clock::now();
+bool Px4Ctrl::guard(){
+    //TODO update
+    if(!false){
+      // not trigger
+      return false;
     }
-    if(timePassed(cmdctrl_last_time)>1000){
-      cmdctrl_hz = cmdctrl_count;
-      cmdctrl_count = 0;
-      cmdctrl_last_time = clock::now();
+
+    // check if imu data too old (not recent, imu should run at least 100hz)
+    controller::ControlCommand ctrl_cmd;
+    constexpr int min_dt = 1000/100; //ms
+    auto tp = timePassed(px4_state->imu->value().second);
+
+    // if data too old
+    if(tp>min_dt){
+      spdlog::error("IMU data too old, thrust map estimate not avaliable");
     }
+    ctrl_cmd = controller->runSafeControl(
+      *px4_state->imu->value().first
+    );
+    estimate_thrust();
+    apply_control(ctrl_cmd, controller::ControlSource::SAFETY);
+    return true;
 }
 
-// TODO add go to pose
+void Px4Ctrl::compute_hz() {
+  //TODO using sliding window
+  // compute hz
+  if(timePassed(odom_last_time) > 100){
+    odom_hz = odom_count*10;
+    odom_count = 0;
+    odom_last_time = clock::now();
+  }
+  if(timePassed(cmdctrl_last_time)>100){
+    cmdctrl_hz = cmdctrl_count * 10;
+    cmdctrl_count = 0;
+    cmdctrl_last_time = clock::now();
+  }
+}
+
 void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
     auto px4ctrl_fsm_state = get_px4_state();
     spdlog::info("client command:{}", ui::CommandStr[static_cast<int>(payload.command)]);
@@ -194,7 +273,7 @@ void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
                           state_map(Px4CtrlState::L2_ALLOW_CMD_CTRL));
         }
         break;
-      case ui::ClientCommand::CHANGE_HOVER_POS:
+      case ui::ClientCommand::CHANGE_HOVER_POS:{
         if(!(px4ctrl_fsm_state[0]==Px4CtrlState::L0_OFFBOARD&&px4ctrl_fsm_state[1]==Px4CtrlState::L1_ARMED))
         {
             spdlog::error("Reject! beacuse L0!=OFFBOARD or L1!=ARMED, L0:{},L1:{}",state_map(px4ctrl_fsm_state[0]),state_map(px4ctrl_fsm_state[1]));
@@ -221,15 +300,31 @@ void Px4Ctrl::client_command_callback(const ui::ClientPayload &payload){
         Eigen::Quaterniond q(data[3],data[4],data[5],data[6]);
         set_hovering_pos(pos,q);
         break;
+      }
+      case ui::ClientCommand::RESTART_FCU:{
+        if(!(px4ctrl_fsm_state[1]==Px4CtrlState::L1_UNARMED))
+        {
+            spdlog::error("Reject! beacuse L1!=UNARMED,L1:{}",state_map(px4ctrl_fsm_state[1]));
+            break;
+        } 
+        if (px4_bridge->restart_fcu())
+        {
+            spdlog::info("restart fcu success");
+        }
+        else
+        {
+            spdlog::error("restart fcu failed");
+        }
+        break;
+      }
     }
 
     last_client_cmd_time = from_uint64(payload.timestamp);
 }
-//TODO remove redundant log
-//TODO add more data: odom hz, cmdctrl hz and so on
+
 ui::ServerPayload Px4Ctrl::fill_server_payload(){
   ui::ServerPayload payload;
-  payload.id = 0;//TODO
+  payload.id = 0;//TODO save as the real id
   payload.timestamp = to_uint64(clock::now());
   auto px4 = px4_state->state->value().first;
   auto battery = px4_state->battery->value().first;
@@ -283,21 +378,26 @@ ui::ServerPayload Px4Ctrl::fill_server_payload(){
   return payload;
 }
 
-void Px4Ctrl::apply_control(const controller::ControlCommand &cmd) {
+void Px4Ctrl::apply_control(const controller::ControlCommand &cmd, const controller::ControlSource des_source) {
+  // TODO match control command source and L2 status
   double thrust = std::clamp(cmd.thrust, px4ctrl_params->quadrotor_params.min_thrust, px4ctrl_params->quadrotor_params.max_thrust);
   switch (cmd.type) {
-    case px4ctrl::params::ControlType::BODY_RATES: {
+    case controller::ControlType::BODY_RATES: {
       Eigen::Vector3d bodyrates = cmd.bodyrates.cwiseMax(-px4ctrl_params->quadrotor_params.max_bodyrate)
                                       .cwiseMin(px4ctrl_params->quadrotor_params.max_bodyrate);
-      std::array<double, 3> bodyrates_arr = {bodyrates.x(), bodyrates.y(),
-                                            bodyrates.z()};
-      px4_bridge->pub_bodyrates_target(thrust, bodyrates_arr);
+      px4_bridge->pub_bodyrates_target(thrust, bodyrates);
       break;
     }
-    case px4ctrl::params::ControlType::ATTITUDE: {
-      const std::array<double, 4> quat = {cmd.attitude.w(), cmd.attitude.x(),
-                                          cmd.attitude.y(), cmd.attitude.z()};
-      px4_bridge->pub_attitude_target(thrust, quat);
+    case controller::ControlType::ATTITUDE: {
+      px4_bridge->pub_attitude_target(thrust, cmd.attitude);
+      break;
+    }
+    case controller::ControlType::TORQUE:{
+      px4_bridge->pub_torque_target(thrust, cmd.torques);
+      break;
+    }
+    case controller::ControlType::ROTOR_THRUST:{
+      px4_bridge->pub_actuator_target(cmd.rotors_thrust);
       break;
     }
   }
@@ -332,41 +432,10 @@ void Px4Ctrl::process() {
         }
       return;
   }
-  /*
-  Description
-  Offboard mode is used for controlling vehicle movement and attitude,
-  by setting position, velocity, acceleration, attitude, attitude rates or
-  thrust/torque setpoints.
-
-  PX4 must receive a stream of MAVLink setpoint messages or the ROS 2
-  OffboardControlMode at 2 Hz as proof that the external controller is healthy.
-  The stream must be sent for at least a second before PX4 will arm in offboard
-  mode, or switch to offboard mode when flying. If the rate falls below 2Hz
-  while under external control PX4 will switch out of offboard mode after a
-  timeout (COM_OF_LOSS_T), and attempt to land or perform some other failsafe
-  action. The action depends on whether or not RC control is available, and is
-  defined in the parameter COM_OBL_RC_ACT.
-
-  When using MAVLink the setpoint messages convey both the signal to indicate
-  that the external source is "alive", and the setpoint value itself. In order
-  to hold position in this case the vehicle must receive a stream of setpoints
-  for the current position.
-
-  When using ROS 2 the proof that the external source is alive is provided by a
-  stream of OffboardControlMode messages, while the actual setpoint is provided
-  by publishing to one of the setpoint uORB topics, such as TrajectorySetpoint.
-  In order to hold position in this case the vehicle must receive a stream of
-  OffboardControlMode but would only need the TrajectorySetpoint once.
-
-  Note that offboard mode only supports a very limited set of MAVLink commands
-  and messages. Operations, like taking off, landing, return to launch, may be
-  best handled using the appropriate modes. Operations like uploading,
-  downloading missions can be performed in any mode.
-*/
   controller::ControlCommand ctrl_cmd;
   process_l0(ctrl_cmd);
   // control
-  apply_control(ctrl_cmd);
+  apply_control(ctrl_cmd,controller::ControlSource::SE3);
   //
   if (last_log_state_time.time_since_epoch().count() == 0) {
     last_log_state_time = clock::now();
@@ -380,7 +449,8 @@ void Px4Ctrl::process() {
 void Px4Ctrl::proof_alive(controller::ControlCommand &ctrl_cmd) {
   // proof alive
   const auto &quat = px4_state->imu->value().first->orientation;
-  ctrl_cmd.type = params::ControlType::ATTITUDE;
+  ctrl_cmd.source = controller::ControlSource::SE3;
+  ctrl_cmd.type = controller::ControlType::ATTITUDE;
   ctrl_cmd.attitude = Eigen::Quaterniond(quat.w, quat.x, quat.y, quat.z);
   ctrl_cmd.thrust = 0.01;
   return;
@@ -412,7 +482,6 @@ void Px4Ctrl::process_l0(controller::ControlCommand &ctrl_cmd) {
     break;
   }
   }
-
 
   // update state
   if (px4_state->state->value().first->mode == mavros_msgs::msg::State::MODE_PX4_OFFBOARD) {
@@ -469,6 +538,13 @@ void Px4Ctrl::process_l1(controller::ControlCommand &ctrl_cmd) {
   L1.step();
 }
 
+void Px4Ctrl::estimate_thrust(){
+    Eigen::Vector3d est_a(px4_state->imu->value().first->linear_acceleration.x,
+                          px4_state->imu->value().first->linear_acceleration.y,
+                          px4_state->imu->value().first->linear_acceleration.z);
+    controller->estimateThrustModel(est_a, px4_state->imu->value().second);
+}
+
 void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
   // task level, 输出控制命令
   if (L2.state <= L1_L2 || L2.state >= END) {
@@ -476,13 +552,6 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     L2 = L2_IDLE;
     return;
   }
-
-  auto estimate_thrust = [this]() {
-    Eigen::Vector3d est_a(px4_state->imu->value().first->linear_acceleration.x,
-                          px4_state->imu->value().first->linear_acceleration.y,
-                          px4_state->imu->value().first->linear_acceleration.z);
-    controller->estimateThrustModel(est_a, px4_state->imu->value().second);
-  };
 
   switch (L2.state) {
   case L2_IDLE: { // default
@@ -499,7 +568,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       }
       L2idle.is_first_time = true;
     }
-    ctrl_cmd.type = params::ControlType::BODY_RATES;
+    ctrl_cmd.type = controller::ControlType::BODY_RATES;
     ctrl_cmd.thrust = 0.1;
     ctrl_cmd.bodyrates = Eigen::Vector3d(0, 0, 0);
     break;
@@ -546,7 +615,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       des.p.z() = des_pos.z();
       des.v = Eigen::Vector3d(0,0,0);
     }
-    ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
+    ctrl_cmd = controller->runControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     spdlog::debug("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
     estimate_thrust();
@@ -579,7 +648,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.p = L2hovering.des_pos;
     des.q = L2hovering.des_q;
     des.yaw = controller::yawFromQuat(des.q);
-    ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
+    ctrl_cmd = controller->runControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     estimate_thrust();
     spdlog::debug("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, ctrl_cmd: thrust:{}\r",des.p.x(),des.p.y(),des.p.z(),des.v.z(),ctrl_cmd.thrust);
@@ -609,7 +678,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.yaw = controller::yawFromQuat(des.q);
     des.p.z() -= px4ctrl_params->statemachine_params.l2_takeoff_landing_speed *timePassedSeconds(L2landing.start_time);
 
-    ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
+    ctrl_cmd = controller->runControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     bool landed = false;
     // land_detector parameters
@@ -668,7 +737,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.p = L2hovering.des_pos;
     des.q = L2hovering.des_q;
     des.yaw = controller::yawFromQuat(des.q);
-    ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
+    ctrl_cmd = controller->runControl(des, *px4_state->odom->value().first,
                                             *px4_state->imu->value().first);
     estimate_thrust();
     break;
@@ -680,51 +749,6 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     {
       L2 = L2_HOVERING;
       break;
-    }
-    switch (px4_state->ctrl_command->value().first->type) {
-        case px4ctrl_msgs::msg::Command::ROTORS_FORCE: {
-          spdlog::error("not supported type:ROTORS_FORCE");
-          L2 = L2_HOVERING;
-          break;
-        }
-        case px4ctrl_msgs::msg::Command::THRUST_BODYRATE: {
-          ctrl_cmd.type = params::ControlType::BODY_RATES;
-          ctrl_cmd.thrust =
-              controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
-          ctrl_cmd.bodyrates = Eigen::Vector3d(px4_state->ctrl_command->value().first->u[1],
-                                              px4_state->ctrl_command->value().first->u[2],
-                                              px4_state->ctrl_command->value().first->u[3]);
-          break;
-        }
-        case px4ctrl_msgs::msg::Command::THRUST_TORQUE: {
-          spdlog::error("not supported type:THRUST_TORQUE");
-          break;
-        }
-        case px4ctrl_msgs::msg::Command::DESIRED_POS: {
-          controller::DesiredState des;
-          auto des_pos = px4_state->ctrl_command->value().first->pos;
-          auto des_vel = px4_state->ctrl_command->value().first->vel;
-          auto des_acc = px4_state->ctrl_command->value().first->acc;
-          auto des_jerk = px4_state->ctrl_command->value().first->jerk;
-          auto des_yaw = px4_state->ctrl_command->value().first->yaw;
-          auto des_quat = px4_state->ctrl_command->value().first->quat;
-          des.p = Eigen::Vector3d(des_pos[0],des_pos[1],des_pos[2]);
-          des.v = Eigen::Vector3d(des_vel[0],des_vel[1],des_vel[2]);
-          des.a = Eigen::Vector3d(des_acc[0],des_acc[1],des_acc[2]);
-          des.j = Eigen::Vector3d(des_jerk[0],des_jerk[1],des_jerk[2]);
-          des.q = Eigen::Quaterniond(des_quat[0],des_quat[1],des_quat[2],des_quat[3]); //w,x,y,z
-          des.yaw = des_yaw;
-          ctrl_cmd = controller->calculateControl(des, *px4_state->odom->value().first,
-                                                  *px4_state->imu->value().first);
-          break;
-        }
-        case px4ctrl_msgs::msg::Command::THRUST_QUAT:{
-          ctrl_cmd.type = params::ControlType::ATTITUDE;
-          auto des_quat = px4_state->ctrl_command->value().first->quat;
-          ctrl_cmd.thrust = controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
-          ctrl_cmd.attitude =  Eigen::Quaterniond(des_quat[0],des_quat[1],des_quat[2],des_quat[3]); //w,x,y,z
-          break;
-        }
     }
     break;
   }

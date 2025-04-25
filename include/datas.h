@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <fmt/format.h>
+#include <fmt/format.h> //because ros2 foxy do not support cxx20
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
@@ -48,6 +48,7 @@ enum class ClientCommand
     ALLOW_CMD_CTRL,
     FORCE_DISARM,
     CHANGE_HOVER_POS,
+    RESTART_FCU
 };
 
 const char* const CommandStr[] = {
@@ -56,6 +57,7 @@ const char* const CommandStr[] = {
     "TAKEOFF",        "LAND",
     "FORCE_HOVER",    "ALLOW_CMD_CTRL",
     "FORCE_DISARM",   "CHANGE_HOVER_POS",
+    "RESTART_FCU"
 };
 
 struct ClientPayload

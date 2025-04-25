@@ -18,9 +18,7 @@ def generate_launch_description():
                 'px4ctrl_zmq_cfg_name': 'zmq.yaml',
             }],
             remappings=[
-                ('odom', '/ekf_estimate'),
-                ('cmd', '/drone/poscmd'),
-                ('allow_cmd', '/drone/allow_cmd'),
+                ('/px4ctrl/ext_odom', '/ekf_estimate'),
             ],
             emulate_tty=True
         )

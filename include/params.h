@@ -5,6 +5,8 @@
 #include <yaml-cpp/exceptions.h>
 #include <yaml-cpp/node/node.h>
 
+#include "types.h"
+
 namespace px4ctrl{
 
     namespace params {
@@ -86,23 +88,6 @@ namespace px4ctrl{
     };
     
 
-    enum class ControlType{
-        BODY_RATES,
-        ATTITUDE,
-        // ROTOR_THRUST not implemented in ROS1
-    };
-
-    inline ControlType controlTypeFromString(const std::string& str){
-        if(str == "BODY_RATES"){
-            return ControlType::BODY_RATES;
-        }else if(str == "ATTITUDE"){
-            return ControlType::ATTITUDE;
-        }else{
-            spdlog::error("Invalid ControlType type:{}",str);
-            throw std::runtime_error("Invalid ControlType type, must be BODY_RATES or ATTITUDE, but got " + str);
-        }
-    }
-
     struct ControlParams{
         uint freq;
         double Kp_pos;
@@ -112,7 +97,7 @@ namespace px4ctrl{
         double max_vel_error;
         double max_vel_int;
 
-        ControlType type;
+        controller::ControlType type;
         double Kw;
         double max_bodyrate_error;
     };
@@ -204,7 +189,7 @@ namespace px4ctrl{
                 params.control_params.max_pos_error = control["max_pos_error"].as<double>();
                 params.control_params.max_vel_error = control["max_vel_error"].as<double>();    
                 params.control_params.max_vel_int = control["max_vel_int"].as<double>();
-                params.control_params.type = params::controlTypeFromString(control["type"].as<std::string>());
+                params.control_params.type = controller::controlTypeFromString(control["type"].as<std::string>());
                 params.control_params.Kw = control["Kw"].as<double>();
                 params.control_params.max_bodyrate_error = control["max_bodyrate_error"].as<double>();
             } catch (const YAML::BadFile& e) {

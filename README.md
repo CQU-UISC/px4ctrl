@@ -17,6 +17,15 @@
 ## About
 基于Mavros实现的Px4控制器
 
+## Architecture
+
+Outter Loop: Based on current state estimation or user command to switch control mode (change selection)
+
+Control Mode>:
+1. Safe Controller(only control attitude)
+2. Position Controller(common mode, when has 6Dof estimation)
+3. Command Controller(ROS Controller)
+
 <!-- GETTING STARTED -->
 ## Getting Started
 TODO

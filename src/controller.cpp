@@ -1,4 +1,6 @@
 #include "controller.h"
+#include "params.h"
+#include <Eigen/src/Geometry/Quaternion.h>
 #include <chrono>
 #include <cmath>
 #include <spdlog/spdlog.h>
@@ -6,17 +8,18 @@
 namespace px4ctrl {
 namespace controller {
 
-Se3Control::Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params):ctrl_params_(ctrl_params),quad_params_(quad_params) { 
-  // TODO
+Se3Control::Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params)
+  :ctrl_params_(ctrl_params),quad_params_(quad_params) { 
   resetThrustMapping();
   vel_error_integral_ = Eigen::Vector3d::Zero();
 }
 
 // Output bodyrates and thrust $\in [0,1]$
-ControlCommand Se3Control::calculateControl(const DesiredState &des,
+ControlCommand Se3Control::runControl(const DesiredState &des,
                                               const nav_msgs::msg::Odometry &odom,
                                               const sensor_msgs::msg::Imu &imu) {
   ControlCommand ret;
+  ret.source = ControlSource::SE3;
   Eigen::Vector3d err_a, err_v, err_p;
   Eigen::Vector3d ez(0, 0, 1);
   Eigen::Vector3d acc, vel, pos;
@@ -60,14 +63,14 @@ ControlCommand Se3Control::calculateControl(const DesiredState &des,
        Eigen::Quaterniond(des_rot))
           .toRotationMatrix();
 
-  if (ctrl_params_.type==params::ControlType::BODY_RATES) {
+  if (ctrl_params_.type==ControlType::BODY_RATES) {
     Eigen::Matrix3d err_rot = des_rot.transpose() * rot;
     Eigen::Vector3d bodyrates =
         -ctrl_params_.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
-    ret.type = params::ControlType::BODY_RATES;
+    ret.type = ControlType::BODY_RATES;
     ret.bodyrates = bodyrates;
-  } else if(ctrl_params_.type==params::ControlType::ATTITUDE) {
-    ret.type = params::ControlType::ATTITUDE;
+  } else if(ctrl_params_.type==ControlType::ATTITUDE) {
+    ret.type = ControlType::ATTITUDE;
     ret.attitude = Eigen::Quaterniond(des_rot);
   }
 
@@ -82,6 +85,16 @@ ControlCommand Se3Control::calculateControl(const DesiredState &des,
   return ret;
 }
 
+ControlCommand Se3Control::runSafeControl(const sensor_msgs::msg::Imu &imu){
+  const auto k = 0.95;
+  double t = k*thrustMap(quad_params_.g);
+  ControlCommand ret;
+  ret.source = ControlSource::SAFETY;
+  ret.type = ControlType::ATTITUDE;
+  ret.attitude = Eigen::Quaterniond(1,0,0,0);
+  ret.thrust = t;
+  return ret;
+}
 
 
 Eigen::Vector3d Se3Control::vee(const Eigen::Matrix3d &m) {

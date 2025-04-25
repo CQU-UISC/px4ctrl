@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <chrono>
 
@@ -43,6 +44,37 @@ inline std::string state_map(const Px4CtrlState& state){
 }
 
 namespace px4ctrl{
+    namespace controller{
+          enum class ControlSource{
+            SE3,
+            SAFETY,
+            CMD
+          };
+          
+          enum class ControlType{
+            BODY_RATES,
+            ATTITUDE,
+            TORQUE,//ROS2 DDS
+            ROTOR_THRUST
+          };
+          
+          inline ControlType controlTypeFromString(const std::string& str){
+            if(str == "BODY_RATES"){
+                return ControlType::BODY_RATES;
+            }else if(str == "ATTITUDE"){
+                return ControlType::ATTITUDE;
+            }else if(str == "TORQUE"){
+                return  ControlType::TORQUE;
+            }else if(str == "ROTOR_THRUST"){
+                return  ControlType::ROTOR_THRUST;
+            }
+            else{
+                throw std::runtime_error("Invalid ControlType type, must be BODY_RATES or ATTITUDE, but got " + str);
+            }
+          }
+                  
+    }
+
     using clock = std::chrono::high_resolution_clock;
 
     // return time duration in milliseconds

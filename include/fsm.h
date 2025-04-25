@@ -16,19 +16,7 @@
 #include "controller.h"
 
 namespace px4ctrl {
-/* 
-    enum Px4CtrlState{
-        NOT_CONNECTED,// 没有连接到PX4
-        NON_OFFBOARD,//(目前PX4的状态不是OFFBOARD)
-        UNARMED,// (MAVLINK手动ARMING==>通过UI)
-        ARMED,//  (OFFBOARD&&ARMED)
-        TAKING_OFF,//  (手动进入)
-        HOVERING ,// (TAKING_OFF后自动进入，或者CMD_CTRL命令超时后进入，或者是地面站强制进入, 或者是Guard触发)
-        ALLOW_CMD_CTRL,//  (在HOVERING下用户手动进入)
-        CMD_CTRL,// （在ALLOW_CMD_CTRL收到命令后自动进入）
-        LANDING ,// (UNARM，在HOVERING下由用户手动/Guard触发，执行成功后进入UNARMED)
-    }; 
-*/
+
     struct LState{
         Px4CtrlState state,last_state,next_state;
         
@@ -126,9 +114,14 @@ namespace px4ctrl {
             void process_l1(controller::ControlCommand&);
             void process_l2(controller::ControlCommand&);
             void proof_alive(controller::ControlCommand&);
-
-            void guard();//监视状态（电池，速度，位置，姿态等
-            bool faile_safe = false;
+            
+            /*In ros2, PX4 requires that the vehicle is already receiving OffboardControlMode messages
+              before it will arm in offboard mode, or before it will switch to offboard mode when flying. 
+              In addition, PX4 will switch out of offboard mode if the stream rate of
+              OffboardControlMode messages drops below approximately 2Hz. 
+              
+            */
+            bool guard();//监视状态（电池，速度，位置，姿态等
 
             //ctrl state
             LState L0,L1,L2;
@@ -143,14 +136,16 @@ namespace px4ctrl {
             std::shared_ptr<Px4State> px4_state;
             std::shared_ptr<ui::Px4Server> px4_server;
 
+            //CTRL
             clock::time_point last_client_cmd_time;
             ui::ServerPayload fill_server_payload();
             void client_command_callback(const ui::ClientPayload& payload);
 
             //controller
             std::shared_ptr<controller::Se3Control> controller;
-            void apply_control(const controller::ControlCommand &cmd);
-            
+            void apply_control(const controller::ControlCommand &cmd, const controller::ControlSource des_source);
+            void estimate_thrust();
+
             // misc
             int odom_count = 0;
             int cmdctrl_count = 0;

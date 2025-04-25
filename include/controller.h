@@ -10,6 +10,7 @@
 #include <Eigen/Dense>
 #include <mavros_msgs/msg/attitude_target.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/detail/imu__struct.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <queue>
 
@@ -22,7 +23,6 @@ inline double yawFromQuat(const Eigen::Quaterniond &q) {
             q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
   return yaw;
 }
-
 struct DesiredState {
   Eigen::Vector3d p;
   Eigen::Vector3d v;
@@ -64,26 +64,31 @@ struct DesiredState {
 struct ControlCommand
 // NOTE: 该结构体是控制器的输出
 {
-  params::ControlType type = params::ControlType::BODY_RATES;
+  ControlSource source;
+  ControlType type;
   // attitude in local frame
   Eigen::Quaterniond attitude;
   // Body rates in body frame
   Eigen::Vector3d bodyrates; // [rad/s]
+  // Torque
+  Eigen::Vector3d torques; // [N.m]
+  // Motors
+  Eigen::Vector4d rotors_thrust;
 
   // Collective mass normalized thrust
   double thrust;
 };
-
-
 
 class Se3Control {
 public:
   Se3Control() = delete;
   Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params);
 
-  ControlCommand calculateControl(const DesiredState &des,
+  ControlCommand runControl(const DesiredState &des,
                                   const nav_msgs::msg::Odometry &odom,
                                   const sensor_msgs::msg::Imu &imu);
+  
+  ControlCommand runSafeControl(const sensor_msgs::msg::Imu & imu);
 
   // thrust mapping
   bool estimateThrustModel(const Eigen::Vector3d &est_a,const clock::time_point &est_time);
