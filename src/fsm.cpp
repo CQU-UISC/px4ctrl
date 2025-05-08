@@ -380,6 +380,26 @@ ui::ServerPayload Px4Ctrl::fill_server_payload(){
 
 void Px4Ctrl::apply_control(const controller::ControlCommand &cmd, const controller::ControlSource des_source) {
   // TODO match control command source and L2 status
+  if(cmd.source != des_source){
+    spdlog::error("Control command source not match");
+    return;
+  }
+  switch (L2.state) {
+    case L2_CMD_CTRL:{
+      if (cmd.source!=controller::ControlSource::CMD){
+        spdlog::debug("L2 state is CMD_CTRL, but control command source is not CMD");
+        return;
+      }
+      break;
+    }
+    default:
+      if(cmd.source==controller::ControlSource::CMD){
+        spdlog::debug("L2 state is not CMD_CTRL, but control command source is CMD");
+        return;
+      }
+      break;
+  }
+
   double thrust = std::clamp(cmd.thrust, px4ctrl_params->quadrotor_params.min_thrust, px4ctrl_params->quadrotor_params.max_thrust);
   switch (cmd.type) {
     case controller::ControlType::BODY_RATES: {
@@ -433,6 +453,7 @@ void Px4Ctrl::process() {
       return;
   }
   controller::ControlCommand ctrl_cmd;
+  ctrl_cmd.source = controller::ControlSource::SE3;
   process_l0(ctrl_cmd);
   // control
   apply_control(ctrl_cmd,controller::ControlSource::SE3);
@@ -747,6 +768,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     // check if cmd is timed out
     if (cmdctrl_hz<px4ctrl_params->statemachine_params.l2_cmd_ctrl_min_hz)
     {
+      spdlog::error("cmdctrl_hz:{} is less than min_hz:{}",cmdctrl_hz,px4ctrl_params->statemachine_params.l2_cmd_ctrl_min_hz);
       L2 = L2_HOVERING;
       break;
     }

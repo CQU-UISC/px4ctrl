@@ -1,13 +1,50 @@
-#include "bridge.h"
-#include "types.h"
 #include <array>
+// #include <chrono>
 #include <functional>
-#include <px4_msgs/msg/detail/vehicle_command__struct.hpp>
-#include <px4_msgs/msg/detail/vehicle_command_ack__struct.hpp>
-#include <px4_msgs/srv/detail/vehicle_command__struct.hpp>
 #include <spdlog/spdlog.h>
 
+#include "bridge.h"
+#include "frame_transforms.h"
+using namespace px4_ros_com::frame_transforms;
+
 namespace px4ctrl {
+
+    inline Eigen::Vector3d rotate_vec_ENU_NED(const Eigen::Vector3d& vec_in) {
+        // NED (X North, Y East, Z Down) & ENU (X East, Y North, Z Up)
+        Eigen::Vector3d vec_out;
+        vec_out << vec_in[1], vec_in[0], -vec_in[2];
+        return vec_out;
+    }
+
+    inline Eigen::Vector3d rotate_vec_FRD_FLU(const Eigen::Vector3d& vec_in) {
+        // FRD (X Forward, Y Right, Z Down) & FLU (X Forward, Y Left, Z Up)
+        Eigen::Vector3d vec_out;
+        vec_out << vec_in[0], -vec_in[1], -vec_in[2];
+        return vec_out;
+    }
+
+    inline Eigen::Quaterniond rotate_quat_ENU_NED(const Eigen::Quaterniond& quat_in) {
+        // Transform from orientation represented in ROS format to PX4 format and back
+        //  * Two steps conversion:
+        //  * 1. aircraft to NED is converted to aircraft to ENU (NED_to_ENU conversion)
+        //  * 2. aircraft to ENU is converted to baselink to ENU (baselink_to_aircraft conversion)
+        // OR 
+        //  * 1. baselink to ENU is converted to baselink to NED (ENU_to_NED conversion)
+        //  * 2. baselink to NED is converted to aircraft to NED (aircraft_to_baselink conversion
+        // NED_ENU_Q Static quaternion needed for rotating between ENU and NED frames
+        Eigen::Vector3d euler_1(M_PI, 0.0, M_PI_2);
+        Eigen::Quaterniond NED_ENU_Q(Eigen::AngleAxisd(euler_1.z(), Eigen::Vector3d::UnitZ()) *
+            Eigen::AngleAxisd(euler_1.y(), Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxisd(euler_1.x(), Eigen::Vector3d::UnitX()));
+        
+        // AIRCRAFT_BASELINK_Q Static quaternion needed for rotating between aircraft and base_link frames
+        Eigen::Vector3d euler_2(M_PI, 0.0, 0.0);
+        Eigen::Quaterniond AIRCRAFT_BASELINK_Q(Eigen::AngleAxisd(euler_2.z(), Eigen::Vector3d::UnitZ()) *
+            Eigen::AngleAxisd(euler_2.y(), Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxisd(euler_2.x(), Eigen::Vector3d::UnitX()));
+        
+        return (NED_ENU_Q*quat_in)*AIRCRAFT_BASELINK_Q;
+    }
 
     Px4CtrlRosBridge::Px4CtrlRosBridge(rclcpp::Node::SharedPtr node,std::shared_ptr<Px4State> px4_state)
         :node(node),px4_state_(px4_state){
@@ -35,7 +72,9 @@ namespace px4ctrl {
             vehicle_status_sub_topic, qos, build_px4ros_cb(px4_state_->vehicle_status));
         // Publishers
         attitude_setpoint_pub = this->node->create_publisher<px4_msgs::msg::VehicleAttitudeSetpoint>(
-            attitude_setpoint_pub_topic, 10);  
+            attitude_setpoint_pub_topic, 10);
+        rates_setpoint_pub = this->node->create_publisher<px4_msgs::msg::VehicleRatesSetpoint>(
+            rates_setpoint_pub_topic, 10);
         actuator_motors_pub = this->node->create_publisher<px4_msgs::msg::ActuatorMotors>(
             actuator_motors_pub_topic, 10);
         offboard_control_mode_pub = this->node->create_publisher<px4_msgs::msg::OffboardControlMode>(
@@ -53,6 +92,7 @@ namespace px4ctrl {
         px4_arming_client = this->node->create_client<mavros_msgs::srv::CommandBool>(px4_arming_client_topic);
         px4_cmd_client = this->node->create_client<mavros_msgs::srv::CommandLong>(px4_cmd_client_topic);
         px4_vehicle_command_client = this->node->create_client<px4_msgs::srv::VehicleCommand>(vehicle_command_client_topic);
+        // offboardTimer = node->create_wall_timer(std::chrono::milliseconds(10), std::bind(&Px4CtrlRosBridge::pub_offboard_control_mode_msg,this));
         spdlog::info("Init px4ros node");
         return;
     }
@@ -64,37 +104,30 @@ namespace px4ctrl {
     }
 
     void Px4CtrlRosBridge::vehicle_odom_from_px4_to_ros(const px4_msgs::msg::VehicleOdometry& msg, nav_msgs::msg::Odometry& odom){
-        Eigen::Vector3d position;
+        Eigen::Vector3d position = Eigen::Vector3d(msg.position[0], msg.position[1], msg.position[2]);
+        Eigen::Quaterniond quat = Eigen::Quaterniond(msg.q[0], msg.q[1], msg.q[2], msg.q[3]);
+        quat = px4_to_ros_orientation(quat);
         if(msg.pose_frame==msg.POSE_FRAME_FRD){
-            position = rotateVectorFromToFRD_FLU(Eigen::Vector3d(msg.position[0], msg.position[1], msg.position[2]));
+            position = rotate_vec_FRD_FLU(position);
         }else if (msg.pose_frame==msg.POSE_FRAME_NED) {
-            position = rotateVectorFromToENU_NED(Eigen::Vector3d(msg.position[0], msg.position[1], msg.position[2]));
+            position = rotate_vec_ENU_NED(position);
         }
         else if (msg.pose_frame==msg.POSE_FRAME_UNKNOWN) {
             spdlog::error("Unknown pose frame");
             return;
         }
 
-        Eigen::Vector3d velocity;
-        Eigen::Quaterniond quat = rotateQuaternionFromToENU_NED(
-            Eigen::Quaterniond(msg.q[0], msg.q[1], msg.q[2], msg.q[3]));
-        Eigen::Vector3d angular_velocity = rotateVectorFromToFRD_FLU(
-            Eigen::Vector3d(msg.angular_velocity[0], msg.angular_velocity[1], msg.angular_velocity[2]));
-        
+        Eigen::Vector3d velocity(msg.velocity[0], msg.velocity[1], msg.velocity[2]);
+        Eigen::Vector3d angular_velocity(msg.angular_velocity[0], msg.angular_velocity[1], msg.angular_velocity[2]);
+        angular_velocity = rotate_vec_FRD_FLU(angular_velocity);
         if(msg.velocity_frame==msg.VELOCITY_FRAME_NED){
-            velocity = rotateVectorFromToENU_NED(
-                Eigen::Vector3d(msg.velocity[0], msg.velocity[1], msg.velocity[2])
-            );
+            velocity = rotate_vec_ENU_NED(velocity);
         }
         else if(msg.velocity_frame==msg.VELOCITY_FRAME_FRD){
-            velocity = rotateVectorFromToFRD_FLU(
-                Eigen::Vector3d(msg.velocity[0], msg.velocity[1], msg.velocity[2])
-            );
+            velocity = rotate_vec_FRD_FLU(velocity);
         }
         else if(msg.velocity_frame==msg.VELOCITY_FRAME_BODY_FRD){
-            velocity = rotateVectorFromToFRD_FLU(
-                Eigen::Vector3d(msg.velocity[0], msg.velocity[1], msg.velocity[2])
-            );
+            velocity = rotate_vec_FRD_FLU(velocity);
             // convert to world frame
             velocity = quat*velocity;
             return;
@@ -114,12 +147,13 @@ namespace px4ctrl {
         odom.pose.pose.orientation.x = quat.x();
         odom.pose.pose.orientation.y = quat.y();
         odom.pose.pose.orientation.z = quat.z();
-        odom.twist.twist.linear.x = velocity[0];
-        odom.twist.twist.linear.y = velocity[1];
-        odom.twist.twist.linear.z = velocity[2];
-        odom.twist.twist.angular.x = angular_velocity[0];
-        odom.twist.twist.angular.y = angular_velocity[1];
-        odom.twist.twist.angular.z = angular_velocity[2];
+        odom.twist.twist.linear.x = velocity.x();
+        odom.twist.twist.linear.y = velocity.y();
+        odom.twist.twist.linear.z = velocity.z();
+        odom.twist.twist.angular.x = angular_velocity.x();
+        odom.twist.twist.angular.y = angular_velocity.y();
+        odom.twist.twist.angular.z = angular_velocity.z();
+        return;
     }
 
     void Px4CtrlRosBridge::spin_once(){
@@ -288,24 +322,18 @@ namespace px4ctrl {
 
     void Px4CtrlRosBridge:: pub_bodyrates_target(const double thrust, const Eigen::Vector3d& bodyrates){//输入的油门应该是映射后的px4油门
         pub_offboard_control_mode_msg(controller::ControlType::BODY_RATES);
-        px4_msgs::msg::VehicleAttitudeSetpoint attitude_setpoint_msg;
-        attitude_setpoint_msg.timestamp = this->node->get_clock()->now().nanoseconds() / 1000;
+        px4_msgs::msg::VehicleRatesSetpoint rates_setpoint_msg;
+        rates_setpoint_msg.timestamp = this->node->get_clock()->now().nanoseconds() / 1000;
         // Rotate bodyrates setpoints from FLU to FRD and fill the msg
         Eigen::Vector3d rotated_bodyrates_sp;
-        rotated_bodyrates_sp = rotateVectorFromToFRD_FLU(bodyrates);
-        attitude_setpoint_msg.roll_body = bodyrates.x();
-        attitude_setpoint_msg.pitch_body = bodyrates.y();
-        attitude_setpoint_msg.yaw_body = bodyrates.z();
-        if (thrust > 0.1){
-            attitude_setpoint_msg.thrust_body[0] = 0.0;
-            attitude_setpoint_msg.thrust_body[1] = 0.0;
-            attitude_setpoint_msg.thrust_body[2] = -thrust;         // DO NOT FORGET THE MINUS SIGN (body NED frame)
-        }
-        else {
-            attitude_setpoint_msg.thrust_body[2] = -0.1;
-        }
-
-        attitude_setpoint_pub->publish(attitude_setpoint_msg);
+        rotated_bodyrates_sp = rotate_vec_FRD_FLU(bodyrates);
+        rates_setpoint_msg.roll = rotated_bodyrates_sp.x();
+        rates_setpoint_msg.pitch = rotated_bodyrates_sp.y();
+        rates_setpoint_msg.yaw = rotated_bodyrates_sp.z();
+        rates_setpoint_msg.thrust_body[0] = 0.0;
+        rates_setpoint_msg.thrust_body[1] = 0.0;
+        rates_setpoint_msg.thrust_body[2] = -thrust;         // DO NOT FORGET THE MINUS SIGN (body NED frame)
+        rates_setpoint_pub->publish(rates_setpoint_msg);
         return;
     }
 
@@ -314,21 +342,14 @@ namespace px4ctrl {
         px4_msgs::msg::VehicleAttitudeSetpoint attitude_setpoint_msg;
         attitude_setpoint_msg.timestamp = this->node->get_clock()->now().nanoseconds() / 1000;
         Eigen::Quaterniond rotated_quat;
-        rotated_quat = rotateQuaternionFromToENU_NED(quat);
+        rotated_quat = ros_to_px4_orientation(quat);
         attitude_setpoint_msg.q_d[0] = rotated_quat.w();
         attitude_setpoint_msg.q_d[1] = rotated_quat.x();
         attitude_setpoint_msg.q_d[2] = rotated_quat.y();
         attitude_setpoint_msg.q_d[3] = rotated_quat.z();
-
-        if (thrust > 0.1){
-            attitude_setpoint_msg.thrust_body[0] = 0.0;
-            attitude_setpoint_msg.thrust_body[1] = 0.0;
-            attitude_setpoint_msg.thrust_body[2] = -thrust;         // DO NOT FORGET THE MINUS SIGN (body NED frame)
-        }
-        else {
-            attitude_setpoint_msg.thrust_body[2] = -0.1;
-        }
-
+        attitude_setpoint_msg.thrust_body[0] = 0.0;
+        attitude_setpoint_msg.thrust_body[1] = 0.0;
+        attitude_setpoint_msg.thrust_body[2] = -thrust;         // DO NOT FORGET THE MINUS SIGN (body NED frame)
         attitude_setpoint_pub->publish(attitude_setpoint_msg);
         return;
     }
@@ -346,15 +367,10 @@ namespace px4ctrl {
         // Fill thrust setpoint msg
         thrust_sp_msg.xyz[0] = 0.0;
         thrust_sp_msg.xyz[1] = 0.0;
-        if (thrust > 0.1){
-            thrust_sp_msg.xyz[2] = -thrust;         // DO NOT FORGET THE MINUS SIGN (body NED frame)
-        }
-        else {
-            thrust_sp_msg.xyz[2] = -0.1;
-        }
+        thrust_sp_msg.xyz[2] = -thrust;         // DO NOT FORGET THE MINUS SIGN (body NED frame)
         // Rotate torque setpoints from FLU to FRD and fill the msg
         Eigen::Vector3d rotated_torque_sp;
-        rotated_torque_sp = rotateVectorFromToFRD_FLU(torque);
+        rotated_torque_sp = rotate_vec_FRD_FLU(torque);
         torque_sp_msg.xyz[0] = rotated_torque_sp[0];
         torque_sp_msg.xyz[1] = rotated_torque_sp[1];
         torque_sp_msg.xyz[2] = rotated_torque_sp[2];
@@ -417,12 +433,17 @@ namespace px4ctrl {
                 offboard_msg.direct_actuator = true;
                 break;
             default:
-                offboard_msg.body_rate = false;
+                offboard_msg.body_rate = true;
                 offboard_msg.attitude = true;
-                offboard_msg.thrust_and_torque = false;
-                offboard_msg.direct_actuator = false;
+                offboard_msg.thrust_and_torque = true;
+                offboard_msg.direct_actuator = true;
                 break;
         }
+        //https://docs.px4.io/main/en/flight_modes/offboard.html
+        // offboard_msg.attitude = true;
+        // offboard_msg.body_rate = true;
+        // offboard_msg.thrust_and_torque = true;
+        // offboard_msg.direct_actuator = true;
         offboard_msg.timestamp = this->node->get_clock()->now().nanoseconds() / 1000;
         offboard_control_mode_pub->publish(offboard_msg);
     }
@@ -440,6 +461,7 @@ namespace px4ctrl {
         this->node->declare_parameter("topics_names.ctrl_cmd_sub_topic", "/px4ctrl/ctrl_cmd");
         // Pub
         this->node->declare_parameter("topics_names.actuator_motors_pub_topic", "/fmu/in/actuator_motors");
+        this->node->declare_parameter("topics_names.rates_setpoint_pub_topic", "/fmu/in/vehicle_rates_setpoint");
         this->node->declare_parameter("topics_names.attitude_setpoint_pub_topic", "/fmu/in/vehicle_attitude_setpoint");
         this->node->declare_parameter("topics_names.thrust_setpoint_pub_topic", "/fmu/in/vehicle_thrust_setpoint");
         this->node->declare_parameter("topics_names.torque_setpoint_pub_topic", "/fmu/in/vehicle_torque_setpoint");
@@ -463,6 +485,7 @@ namespace px4ctrl {
         
         // Pub
         vehicle_odometry_pub_topic = this->node->get_parameter("topics_names.vehicle_odometry_pub_topic").as_string();
+        rates_setpoint_pub_topic = this->node->get_parameter("topics_names.rates_setpoint_pub_topic").as_string();
         actuator_motors_pub_topic = this->node->get_parameter("topics_names.actuator_motors_pub_topic").as_string();
         attitude_setpoint_pub_topic = this->node->get_parameter("topics_names.attitude_setpoint_pub_topic").as_string();
         thrust_setpoint_pub_topic = this->node->get_parameter("topics_names.thrust_setpoint_pub_topic").as_string();

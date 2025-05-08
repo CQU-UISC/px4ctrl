@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(px4ctrl)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Debug)
@@ -38,6 +38,7 @@ add_executable(px4ctrl_node
   src/bridge.cpp
   src/fsm.cpp
   src/server.cpp
+  src/frame_transforms.cpp
 )
 
 ament_target_dependencies(px4ctrl_node

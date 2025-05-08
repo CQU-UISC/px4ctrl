@@ -15,7 +15,7 @@ quadrotor:
   g: 9.81 #m/s^2 
   thrustmod: "ESTIMATE" #ESTIMATE or THRUSTMAP
   thrustmap: [0.0001, 6.4, 0] #thrustmap for all thrust=> thrust = thrustmap[0]*t^2 + thrustmap[1]*t + thrustmap[2] unit: N
-  init_hover_thrust: 0.35 #unit, initial hover thrust for iterative thrust estimation
+  init_hover_thrust: 0.7 #unit, initial hover thrust for iterative thrust estimation
   max_thrust: 1.0 #unit
   min_thrust: 0.0 #unit
   max_bodyrate: 5 #rad/s for bodyrate control
@@ -32,8 +32,9 @@ controller: #geometry controller
 
   type: "ATTITUDE" #ATTITUDE or BODY_RATES
   #bodyrate loop
-  Kw: 5.0 #angular velocity error gain
-  max_bodyrate_error: 5.0 #max bodyrate error
+  Kw_rp: 12.0 #angular velocity error gain in roll and pitch
+  Kw_yaw: 5.0 #angular velocity error gain in yaw
+  max_bodyrate_error: 15.0 #max bodyrate error
 
 guard: 
   freq: 200

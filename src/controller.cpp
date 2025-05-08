@@ -19,7 +19,6 @@ ControlCommand Se3Control::runControl(const DesiredState &des,
                                               const nav_msgs::msg::Odometry &odom,
                                               const sensor_msgs::msg::Imu &imu) {
   ControlCommand ret;
-  ret.source = ControlSource::SE3;
   Eigen::Vector3d err_a, err_v, err_p;
   Eigen::Vector3d ez(0, 0, 1);
   Eigen::Vector3d acc, vel, pos;
@@ -56,23 +55,34 @@ ControlCommand Se3Control::runControl(const DesiredState &des,
   des_rot << xb, yb, zb;
   const auto &imu_q = imu.orientation;
   const auto &odom_q = odom.pose.pose.orientation;
-
+  const auto imu_quat = Eigen::Quaterniond(imu_q.w, imu_q.x, imu_q.y, imu_q.z);
+  const auto odom_quat = Eigen::Quaterniond(odom_q.w, odom_q.x, odom_q.y, odom_q.z);
+  const auto des_quat = Eigen::Quaterniond(des_rot);
   des_rot =
-      (Eigen::Quaterniond(imu_q.w, imu_q.x, imu_q.y, imu_q.z) *
-       Eigen::Quaterniond(odom_q.w, odom_q.x, odom_q.y, odom_q.z).inverse() *
-       Eigen::Quaterniond(des_rot))
+      (imu_quat *
+       odom_quat.inverse() *
+       des_quat)
           .toRotationMatrix();
 
   if (ctrl_params_.type==ControlType::BODY_RATES) {
-    Eigen::Matrix3d err_rot = des_rot.transpose() * rot;
-    Eigen::Vector3d bodyrates =
-        -ctrl_params_.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
+    const Eigen::Quaterniond q_e = odom_quat.inverse() * des_quat;
+    Eigen::Vector3d bodyrates;
+    if (q_e.w() >= 0) {
+      bodyrates.x() = 2.0 * ctrl_params_.Kw_rp  * q_e.x();
+      bodyrates.y() = 2.0 * ctrl_params_.Kw_rp  * q_e.y();
+      bodyrates.z() = 2.0 * ctrl_params_.Kw_yaw  * q_e.z();
+    } else {
+      bodyrates.x() = -2.0 * ctrl_params_.Kw_rp  * q_e.x();
+      bodyrates.y() = -2.0 * ctrl_params_.Kw_rp  * q_e.y();
+      bodyrates.z() = -2.0 * ctrl_params_.Kw_yaw  * q_e.z();
+    }
     ret.type = ControlType::BODY_RATES;
     ret.bodyrates = bodyrates;
   } else if(ctrl_params_.type==ControlType::ATTITUDE) {
     ret.type = ControlType::ATTITUDE;
     ret.attitude = Eigen::Quaterniond(des_rot);
   }
+
 
   // Used for thrust-accel mapping estimation
   timed_thrust.push(
@@ -81,7 +91,7 @@ ControlCommand Se3Control::runControl(const DesiredState &des,
   while (timed_thrust.size() > 100) {
     timed_thrust.pop();
   }
-
+  ret.source = ControlSource::SE3;
   return ret;
 }
 
@@ -170,8 +180,13 @@ t = (1+x/g)*h = h + (h/g)*x, h need to be estimated
 会在线根据期望机体z轴加速度和实际机体z轴加速度估计线性模型的斜率.
 */
 void Se3Control::resetThrustMapping() {
-  thr2acc = quad_params_.g / quad_params_.init_hover_thrust;
+  auto init_thr2acc = quad_params_.g / quad_params_.init_hover_thrust;
   P = 1e6;
+  spdlog::info("Reset thrust mapping(Linear Model), hover thrust from {} to {}", quad_params_.g/thr2acc, quad_params_.g/init_thr2acc);
+  thr2acc = init_thr2acc;
+  while(!timed_thrust.empty()){
+    timed_thrust.pop();
+  }
 }
 
 } // namespace controller

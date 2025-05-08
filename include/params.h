@@ -98,7 +98,8 @@ namespace px4ctrl{
         double max_vel_int;
 
         controller::ControlType type;
-        double Kw;
+        double Kw_rp;
+        double Kw_yaw;
         double max_bodyrate_error;
     };
 
@@ -178,7 +179,9 @@ namespace px4ctrl{
 
 
                 auto control = config["controller"];
-                if(!control["freq"] || !control["Kp_pos"] || !control["Kd_pos"] || !control["Ki_pos"] || !control["max_pos_error"] || !control["max_vel_error"] || !control["max_vel_int"] || !control["type"] || !control["Kw"] || !control["max_bodyrate_error"]){
+                if(!control["freq"] || !control["Kp_pos"] || !control["Kd_pos"] || !control["Ki_pos"] || !control["max_pos_error"] 
+                    || !control["max_vel_error"] || !control["max_vel_int"] || !control["type"] 
+                    || !control["Kw_rp"] ||!control["Kw_yaw"] || !control["max_bodyrate_error"]){
                     spdlog::error("control params not complete");
                     throw std::runtime_error("control params not complete");
                 }
@@ -190,7 +193,8 @@ namespace px4ctrl{
                 params.control_params.max_vel_error = control["max_vel_error"].as<double>();    
                 params.control_params.max_vel_int = control["max_vel_int"].as<double>();
                 params.control_params.type = controller::controlTypeFromString(control["type"].as<std::string>());
-                params.control_params.Kw = control["Kw"].as<double>();
+                params.control_params.Kw_rp = control["Kw_rp"].as<double>();
+                params.control_params.Kw_yaw = control["Kw_yaw"].as<double>();
                 params.control_params.max_bodyrate_error = control["max_bodyrate_error"].as<double>();
             } catch (const YAML::BadFile& e) {
                 spdlog::error("error:{}",e.what());
@@ -242,7 +246,8 @@ namespace px4ctrl{
             os << "max_vel_error:" << px4paras.control_params.max_vel_error << std::endl;
             os << "max_vel_int:" << px4paras.control_params.max_vel_int << std::endl;
             os << "type:" << static_cast<int>(px4paras.control_params.type) << std::endl;
-            os << "Kw:" << px4paras.control_params.Kw << std::endl;
+            os << "Kw_rp:" << px4paras.control_params.Kw_rp << std::endl;
+            os << "Kw_yaw:" << px4paras.control_params.Kw_yaw << std::endl;
             os << "max_bodyrate_error:" << px4paras.control_params.max_bodyrate_error << std::endl;
             return os;
         }

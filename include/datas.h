@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <fmt/format.h> //because ros2 foxy do not support cxx20
+#include <format>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <zmq.hpp>
@@ -117,10 +117,10 @@ struct ZmqParas{
             paras.client_topic = config["client_topic"].as<std::string>();
             paras.log_topic = config["log_topic"].as<std::string>();
 
-            paras.xpub_bind = fmt::format("tcp://*:{}",paras.xpub_endpoint_port);
-            paras.xsub_bind = fmt::format("tcp://*:{}",paras.xsub_endpoint_port);
-            paras.xpub_url = fmt::format("tcp://{}:{}",paras.xpub_endpoint_ip,paras.xpub_endpoint_port);
-            paras.xsub_url = fmt::format("tcp://{}:{}",paras.xsub_endpoint_ip,paras.xsub_endpoint_port);
+            paras.xpub_bind = std::format("tcp://*:{}",paras.xpub_endpoint_port);
+            paras.xsub_bind = std::format("tcp://*:{}",paras.xsub_endpoint_port);
+            paras.xpub_url = std::format("tcp://{}:{}",paras.xpub_endpoint_ip,paras.xpub_endpoint_port);
+            paras.xsub_url = std::format("tcp://{}:{}",paras.xsub_endpoint_ip,paras.xsub_endpoint_port);
         }
         catch (const YAML::BadFile& e)
         {
