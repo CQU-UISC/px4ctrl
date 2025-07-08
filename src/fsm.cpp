@@ -77,7 +77,12 @@ void Px4Ctrl::run() {
           }
           case px4ctrl_msgs::msg::Command::THRUST_TORQUE: {
             // TODO
-            spdlog::error("not supported type:THRUST_TORQUE");
+            ctrl_cmd.type = controller::ControlType::TORQUE;
+            ctrl_cmd.thrust =
+                controller->thrustMap(px4_state->ctrl_command->value().first->u[0]);
+            ctrl_cmd.torques = Eigen::Vector3d(px4_state->ctrl_command->value().first->u[1],
+                                                px4_state->ctrl_command->value().first->u[2],
+                                                px4_state->ctrl_command->value().first->u[3]);
             break;
           }
           case px4ctrl_msgs::msg::Command::DESIRED_POS: {
@@ -379,7 +384,6 @@ ui::ServerPayload Px4Ctrl::fill_server_payload(){
 }
 
 void Px4Ctrl::apply_control(const controller::ControlCommand &cmd, const controller::ControlSource des_source) {
-  // TODO match control command source and L2 status
   if(cmd.source != des_source){
     spdlog::error("Control command source not match");
     return;
