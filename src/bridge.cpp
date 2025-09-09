@@ -1,4 +1,5 @@
 #include "bridge.h"
+#include <rmw/types.h>
 #include <spdlog/spdlog.h>
 
 namespace px4ctrl {
@@ -31,7 +32,7 @@ Px4CtrlRosBridge::Px4CtrlRosBridge(const rclcpp::Node::SharedPtr &node,
 
   // Publishers
   px4_cmd_pub = node->create_publisher<mavros_msgs::msg::AttitudeTarget>(
-      "/mavros/setpoint_raw/attitude", 10);
+      "/mavros/setpoint_raw/attitude", RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
 
   allow_cmdctrl_pub = node->create_publisher<std_msgs::msg::Bool>(
       "/px4ctrl/allow_cmd_ctrl", 10);

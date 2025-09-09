@@ -4,30 +4,30 @@ px4ctrl:
   l2_takeoff_height: 1.0 #m
   l2_idle_disarm_time: 10000.0 #ms
   l2_cmd_ctrl_min_hz: 50 #Hz
-  l2_takeoff_landing_speed: 0.2 #m/s
+  l2_takeoff_landing_speed: 0.3 #m/s
   l2_land_position_deviation_c: -0.5 #m
   l2_land_velocity_thr_c: 0.15 #m/s
   l2_land_time_keep_c: 1000 #ms
 
 quadrotor: 
-  mass: 0.772 #kg
-  inertia: [0.0025, 0.0021, 0.0043] #kg*m^2 used for Torque Control
+  mass: 2.0 #kg
+  inertia: [0.022, 0.022, 0.04] #kg*m^2 used for Torque Control
   g: 9.81 #m/s^2 
   thrustmod: "ESTIMATE" #ESTIMATE or THRUSTMAP
-  thrustmap: [0.0001, 8.0, 0] #thrustmap for all thrust=> thrust = thrustmap[0]*t^2 + thrustmap[1]*t + thrustmap[2] unit: N
-  init_hover_thrust: 0.35 #unit, initial hover thrust for iterative thrust estimation
-  max_thrust: 0.9 #unit
+  thrustmap: [0.0001, 10.0, 0] #thrustmap for all thrust=> thrust = thrustmap[0]*t^2 + thrustmap[1]*t + thrustmap[2] unit: N
+  init_hover_thrust: 0.7 #unit, initial hover thrust for iterative thrust estimation
+  max_thrust: 1.0 #unit
   min_thrust: 0.0 #unit
   max_bodyrate: 5 #rad/s for bodyrate control
 
 controller: #geometry controller
   freq: 200
   # position loop: a_des = Kp_pos*(p_des - p) + Kd_pos*(v_des - v) + Ki_pos*(I_v + v_des - v)
-  Kp_pos: 3.0 #position error gain
-  Kd_pos: 1.5 #velocity error gain
+  Kp_pos: 4.0 #position error gain
+  Kd_pos: 2.0 #velocity error gain
   Ki_pos: 0 #integral error gain
-  max_pos_error: 1.0 #max position error
-  max_vel_error: 1.0 #max velocity error
+  max_pos_error: 1.5 #max position error
+  max_vel_error: 1.5 #max velocity error
   max_vel_int: 1.0 #max integral velocity, integration saturation
 
   type: "ATTITUDE" #ATTITUDE or BODY_RATES

@@ -64,32 +64,46 @@ inline bool operator==(const LState &lhs, const LState &rhs) {
 
 namespace L2 {
 struct L2IdleState {
-  bool is_first_time = true;
+  bool is_first_time;
   clock::time_point last_arm_time;
+  L2IdleState(): is_first_time(true),
+                  last_arm_time() {}
 };
 
 struct L2TakingOffState {
   Eigen::Vector3d start_pos;
   Eigen::Quaterniond start_q;
   clock::time_point last_takeoff_time;
+  L2TakingOffState(): start_pos(Eigen::Vector3d::Zero()),
+                     start_q(Eigen::Quaterniond::Identity()),
+                     last_takeoff_time() {}
 };
 
 struct L2HoveringState {
   Eigen::Vector3d des_pos;
   Eigen::Quaterniond des_q;
+  L2HoveringState(): des_pos(Eigen::Vector3d::Zero()),
+                   des_q(Eigen::Quaterniond::Identity()) {}
 };
 
 struct L2AllowCmdCtrlState {
   Eigen::Vector3d hovering_pos;
   Eigen::Quaterniond hovering_q;
+  L2AllowCmdCtrlState(): hovering_pos(Eigen::Vector3d::Zero()),
+                        hovering_q(Eigen::Quaterniond::Identity()) {}
 };
 
 struct L2LandingState {
   Eigen::Vector3d start_pos;
   Eigen::Quaterniond start_q;
   clock::time_point start_time;
-  bool is_first_time = true;
+  bool is_first_time;
   clock::time_point time_C12_reached; // time_Constraints12_reached
+  L2LandingState(): start_pos(Eigen::Vector3d::Zero()),
+                   start_q(Eigen::Quaterniond::Identity()),
+                   start_time(),
+                   is_first_time(true),
+                   time_C12_reached() {}
 };
 } // namespace L2
 

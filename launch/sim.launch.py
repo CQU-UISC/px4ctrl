@@ -14,11 +14,11 @@ def generate_launch_description():
                 'px4ctrl_base_dir': PathJoinSubstitution([
                     FindPackageShare('px4ctrl')
                 ]),
-                'px4ctrl_cfg_name': 'xi35.yaml',
+                'px4ctrl_cfg_name': 'gz500.yaml',
                 'px4ctrl_zmq_cfg_name': 'zmq.yaml',
             }],
             remappings=[
-                ('/px4ctrl/ext_odom', '/vio_odom'),
+                ('/px4ctrl/ext_odom', '/ekf_estimate'),
             ],
             emulate_tty=True
         )

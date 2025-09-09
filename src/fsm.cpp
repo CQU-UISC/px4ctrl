@@ -563,7 +563,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       des.p.z() = des_pos.z();
       des.v = Eigen::Vector3d(0, 0, 0);
     }
-    ctrl_cmd = controller->calculateControl(
+    ctrl_cmd = controller->runControl(
         des, *px4_state->odom->value().first, *px4_state->imu->value().first);
     spdlog::debug("Takeoff Des Position:x :{} y:{} z:{}, velocity: v:{}, "
                   "ctrl_cmd: thrust:{}\r",
@@ -600,7 +600,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.p = L2hovering.des_pos;
     des.q = L2hovering.des_q;
     des.yaw = controller::yawFromQuat(des.q);
-    ctrl_cmd = controller->calculateControl(
+    ctrl_cmd = controller->runControl(
         des, *px4_state->odom->value().first, *px4_state->imu->value().first);
     estimate_thrust();
     spdlog::debug("Hover Des Position:x :{} y:{} z:{}, velocity: v:{}, "
@@ -634,7 +634,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.p.z() -= px4ctrl_params->statemachine_params.l2_takeoff_landing_speed *
                  timePassedSeconds(L2landing.start_time);
 
-    ctrl_cmd = controller->calculateControl(
+    ctrl_cmd = controller->runControl(
         des, *px4_state->odom->value().first, *px4_state->imu->value().first);
     bool landed = false;
     // land_detector parameters
@@ -708,7 +708,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
     des.p = L2hovering.des_pos;
     des.q = L2hovering.des_q;
     des.yaw = controller::yawFromQuat(des.q);
-    ctrl_cmd = controller->calculateControl(
+    ctrl_cmd = controller->runControl(
         des, *px4_state->odom->value().first, *px4_state->imu->value().first);
     estimate_thrust();
     break;
@@ -755,7 +755,7 @@ void Px4Ctrl::process_l2(controller::ControlCommand &ctrl_cmd) {
       des.q = Eigen::Quaterniond(des_quat[0], des_quat[1], des_quat[2],
                                  des_quat[3]); // w,x,y,z
       des.yaw = des_yaw;
-      ctrl_cmd = controller->calculateControl(
+      ctrl_cmd = controller->runControl(
           des, *px4_state->odom->value().first, *px4_state->imu->value().first);
       break;
     }
