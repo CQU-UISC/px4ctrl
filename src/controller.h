@@ -5,13 +5,13 @@
 /*************************************************************/
 #pragma once
 
-#include "types.h"
 #include "params.h"
+#include "types.h"
 #include <Eigen/Dense>
 #include <mavros_msgs/msg/attitude_target.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <sensor_msgs/msg/imu.hpp>
 #include <queue>
+#include <sensor_msgs/msg/imu.hpp>
 
 namespace px4ctrl {
 namespace controller {
@@ -41,7 +41,7 @@ struct DesiredState {
     q = Eigen::Quaterniond::Identity();
     yaw = 0;
     yaw_rate = 0;
-    control_attitude = false;//TODO
+    control_attitude = false; // TODO
   };
 
   DesiredState(const nav_msgs::msg::Odometry &odom) {
@@ -60,7 +60,6 @@ struct DesiredState {
   };
 };
 
-
 struct ControlCommand
 // NOTE: 该结构体是控制器的输出
 {
@@ -74,19 +73,19 @@ struct ControlCommand
   double thrust;
 };
 
-
-
 class Se3Control {
 public:
   Se3Control() = delete;
-  Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params);
+  Se3Control(const params::ControlParams &ctrl_params,
+             const params::QuadrotorParams &quad_params);
 
   ControlCommand calculateControl(const DesiredState &des,
                                   const nav_msgs::msg::Odometry &odom,
                                   const sensor_msgs::msg::Imu &imu);
 
   // thrust mapping
-  bool estimateThrustModel(const Eigen::Vector3d &est_a,const clock::time_point &est_time);
+  bool estimateThrustModel(const Eigen::Vector3d &est_a,
+                           const clock::time_point &est_time);
   void resetThrustMapping();
   double thrustMap(const double collective_thrust);
 

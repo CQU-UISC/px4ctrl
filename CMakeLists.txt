@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
-project(px4ctrl_lux)
+project(px4ctrl)
 
 set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 option(BUILD_TESTS "Build tests" OFF)
@@ -24,10 +24,9 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(mavros_msgs REQUIRED)
-find_package(px4msgs REQUIRED)
+find_package(px4ctrl_msgs REQUIRED)
 
 include_directories(
-  include
   ${EIGEN_INCLUDE_DIRS}
 )
 
@@ -45,7 +44,7 @@ ament_target_dependencies(px4ctrl_node
   sensor_msgs
   nav_msgs
   mavros_msgs
-  px4msgs
+  px4ctrl_msgs
 )
 
 target_link_libraries(px4ctrl_node

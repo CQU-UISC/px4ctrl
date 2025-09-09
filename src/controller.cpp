@@ -6,7 +6,9 @@
 namespace px4ctrl {
 namespace controller {
 
-Se3Control::Se3Control(const params::ControlParams &ctrl_params, const params::QuadrotorParams &quad_params):ctrl_params_(ctrl_params),quad_params_(quad_params) { 
+Se3Control::Se3Control(const params::ControlParams &ctrl_params,
+                       const params::QuadrotorParams &quad_params)
+    : ctrl_params_(ctrl_params), quad_params_(quad_params) {
   // TODO
   resetThrustMapping();
   vel_error_integral_ = Eigen::Vector3d::Zero();
@@ -14,8 +16,8 @@ Se3Control::Se3Control(const params::ControlParams &ctrl_params, const params::Q
 
 // Output bodyrates and thrust $\in [0,1]$
 ControlCommand Se3Control::calculateControl(const DesiredState &des,
-                                              const nav_msgs::msg::Odometry &odom,
-                                              const sensor_msgs::msg::Imu &imu) {
+                                            const nav_msgs::msg::Odometry &odom,
+                                            const sensor_msgs::msg::Imu &imu) {
   ControlCommand ret;
   Eigen::Vector3d err_a, err_v, err_p;
   Eigen::Vector3d ez(0, 0, 1);
@@ -36,11 +38,16 @@ ControlCommand Se3Control::calculateControl(const DesiredState &des,
   err_v = vel - des.v;
 
   Eigen::Vector3d des_acc = des.a + quad_params_.g * ez;
-  err_p = err_p.cwiseMin(ctrl_params_.max_pos_error).cwiseMax(-ctrl_params_.max_pos_error);
-  err_v = err_v.cwiseMin(ctrl_params_.max_vel_error).cwiseMax(-ctrl_params_.max_vel_error);
-  vel_error_integral_ += err_v*ctrl_params_.Kd_pos+err_p*ctrl_params_.Kp_pos;
-  vel_error_integral_ = vel_error_integral_.cwiseMin(ctrl_params_.max_vel_int).cwiseMax(-ctrl_params_.max_vel_int);
-  des_acc -= ctrl_params_.Kp_pos * err_p + ctrl_params_.Kd_pos * err_v + ctrl_params_.Ki_pos * vel_error_integral_;
+  err_p = err_p.cwiseMin(ctrl_params_.max_pos_error)
+              .cwiseMax(-ctrl_params_.max_pos_error);
+  err_v = err_v.cwiseMin(ctrl_params_.max_vel_error)
+              .cwiseMax(-ctrl_params_.max_vel_error);
+  vel_error_integral_ +=
+      err_v * ctrl_params_.Kd_pos + err_p * ctrl_params_.Kp_pos;
+  vel_error_integral_ = vel_error_integral_.cwiseMin(ctrl_params_.max_vel_int)
+                            .cwiseMax(-ctrl_params_.max_vel_int);
+  des_acc -= ctrl_params_.Kp_pos * err_p + ctrl_params_.Kd_pos * err_v +
+             ctrl_params_.Ki_pos * vel_error_integral_;
 
   double collective_thrust = des_acc.dot(quat * ez);
   ret.thrust = thrustMap(collective_thrust);
@@ -60,13 +67,13 @@ ControlCommand Se3Control::calculateControl(const DesiredState &des,
        Eigen::Quaterniond(des_rot))
           .toRotationMatrix();
 
-  if (ctrl_params_.type==params::ControlType::BODY_RATES) {
+  if (ctrl_params_.type == params::ControlType::BODY_RATES) {
     Eigen::Matrix3d err_rot = des_rot.transpose() * rot;
     Eigen::Vector3d bodyrates =
         -ctrl_params_.Kw * 1 / 2.f * vee(err_rot - err_rot.transpose());
     ret.type = params::ControlType::BODY_RATES;
     ret.bodyrates = bodyrates;
-  } else if(ctrl_params_.type==params::ControlType::ATTITUDE) {
+  } else if (ctrl_params_.type == params::ControlType::ATTITUDE) {
     ret.type = params::ControlType::ATTITUDE;
     ret.attitude = Eigen::Quaterniond(des_rot);
   }
@@ -81,8 +88,6 @@ ControlCommand Se3Control::calculateControl(const DesiredState &des,
 
   return ret;
 }
-
-
 
 Eigen::Vector3d Se3Control::vee(const Eigen::Matrix3d &m) {
   Eigen::Vector3d ret;
@@ -106,7 +111,7 @@ double Se3Control::thrustMap(const double collective_thrust) {
 }
 
 bool Se3Control::estimateThrustModel(const Eigen::Vector3d &est_a,
-                                        const clock::time_point &est_time) {
+                                     const clock::time_point &est_time) {
   // clock::time_point t_now = clock::now();
   const clock::time_point t_now = est_time;
   while (timed_thrust.size() >= 1) {
@@ -143,7 +148,7 @@ bool Se3Control::estimateThrustModel(const Eigen::Vector3d &est_a,
              thr * thr2acc); // collective_thrust = g (imu z value),
                              // collective_thrust/thurst2acc = hover_percentage;
     P = (1 - K * thr) * P / rho2;
-    spdlog::debug("Estimated hoving percentage:{}",quad_params_.g/thr2acc);
+    spdlog::debug("Estimated hoving percentage:{}", quad_params_.g / thr2acc);
     return true;
   }
   return false;

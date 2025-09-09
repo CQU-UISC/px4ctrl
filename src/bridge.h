@@ -5,23 +5,23 @@
 #include <memory>
 #include <type_traits>
 
-#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/client.hpp>
 #include <rclcpp/publisher.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/subscription.hpp>
 
-#include <mavros_msgs/srv/set_mode.hpp>
 #include <mavros_msgs/srv/command_bool.hpp>
 #include <mavros_msgs/srv/command_long.hpp>
+#include <mavros_msgs/srv/set_mode.hpp>
 
-#include <std_msgs/msg/bool.hpp>
+#include <mavros_msgs/msg/attitude_target.hpp>
 #include <mavros_msgs/msg/extended_state.hpp>
 #include <mavros_msgs/msg/state.hpp>
-#include <mavros_msgs/msg/attitude_target.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <px4msgs/msg/command.hpp>
+#include <px4ctrl_msgs/msg/command.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -43,13 +43,12 @@ template <typename T>
 concept IPX4_ITEM = requires(T t) {
   {
     remove_cvref_t<T>(t)
-  }
-  -> any_of<mavros_msgs::msg::State::ConstSharedPtr, 
-            mavros_msgs::msg::ExtendedState::ConstSharedPtr,
-            sensor_msgs::msg::BatteryState::ConstSharedPtr, 
-            nav_msgs::msg::Odometry::ConstSharedPtr,
-            sensor_msgs::msg::Imu::ConstSharedPtr, 
-            px4msgs::msg::Command::ConstSharedPtr>;
+  } -> any_of<mavros_msgs::msg::State::ConstSharedPtr,
+              mavros_msgs::msg::ExtendedState::ConstSharedPtr,
+              sensor_msgs::msg::BatteryState::ConstSharedPtr,
+              nav_msgs::msg::Odometry::ConstSharedPtr,
+              sensor_msgs::msg::Imu::ConstSharedPtr,
+              px4ctrl_msgs::msg::Command::ConstSharedPtr>;
 };
 
 template <typename T>
@@ -62,35 +61,47 @@ using IPX4_STATE = Px4DataPtr<std::pair<ITEM, TIME>>;
 
 struct Px4State {
   IPX4_STATE<mavros_msgs::msg::State::ConstSharedPtr, clock::time_point> state;
-  IPX4_STATE<mavros_msgs::msg::ExtendedState::ConstSharedPtr, clock::time_point> ext_state;
-  IPX4_STATE<sensor_msgs::msg::BatteryState::ConstSharedPtr, clock::time_point> battery;
+  IPX4_STATE<mavros_msgs::msg::ExtendedState::ConstSharedPtr, clock::time_point>
+      ext_state;
+  IPX4_STATE<sensor_msgs::msg::BatteryState::ConstSharedPtr, clock::time_point>
+      battery;
   IPX4_STATE<nav_msgs::msg::Odometry::ConstSharedPtr, clock::time_point> odom;
   IPX4_STATE<sensor_msgs::msg::Imu::ConstSharedPtr, clock::time_point> imu;
-  IPX4_STATE<px4msgs::msg::Command::ConstSharedPtr, clock::time_point> ctrl_command;
+  IPX4_STATE<px4ctrl_msgs::msg::Command::ConstSharedPtr, clock::time_point>
+      ctrl_command;
 
-  Px4State(){
-    state = std::make_shared<Px4Data<std::pair<mavros_msgs::msg::State::ConstSharedPtr, clock::time_point>>>();
-    ext_state = std::make_shared<Px4Data<std::pair<mavros_msgs::msg::ExtendedState::ConstSharedPtr, clock::time_point>>>();
-    battery = std::make_shared<Px4Data<std::pair<sensor_msgs::msg::BatteryState::ConstSharedPtr, clock::time_point>>>();
-    odom = std::make_shared<Px4Data<std::pair<nav_msgs::msg::Odometry::ConstSharedPtr, clock::time_point>>>();
-    imu = std::make_shared<Px4Data<std::pair<sensor_msgs::msg::Imu::ConstSharedPtr, clock::time_point>>>();
-    ctrl_command = std::make_shared<Px4Data<std::pair<px4msgs::msg::Command::ConstSharedPtr, clock::time_point>>>();
+  Px4State() {
+    state = std::make_shared<Px4Data<std::pair<
+        mavros_msgs::msg::State::ConstSharedPtr, clock::time_point>>>();
+    ext_state = std::make_shared<Px4Data<std::pair<
+        mavros_msgs::msg::ExtendedState::ConstSharedPtr, clock::time_point>>>();
+    battery = std::make_shared<Px4Data<std::pair<
+        sensor_msgs::msg::BatteryState::ConstSharedPtr, clock::time_point>>>();
+    odom = std::make_shared<Px4Data<std::pair<
+        nav_msgs::msg::Odometry::ConstSharedPtr, clock::time_point>>>();
+    imu = std::make_shared<Px4Data<
+        std::pair<sensor_msgs::msg::Imu::ConstSharedPtr, clock::time_point>>>();
+    ctrl_command = std::make_shared<Px4Data<std::pair<
+        px4ctrl_msgs::msg::Command::ConstSharedPtr, clock::time_point>>>();
   }
 };
 
-class Px4CtrlRosBridge{
+class Px4CtrlRosBridge {
 public:
   Px4CtrlRosBridge() = delete;
-  Px4CtrlRosBridge(const rclcpp::Node::SharedPtr& node, std::shared_ptr<Px4State> px4_state);
+  Px4CtrlRosBridge(const rclcpp::Node::SharedPtr &node,
+                   std::shared_ptr<Px4State> px4_state);
 
   bool set_mode(const std::string &mode);
   bool set_arm(const bool arm);
   bool force_disarm();
   bool enter_offboard();
   bool exit_offboard();
-  
-  bool pub_bodyrates_target(const double thrust, const std::array<double, 3> &bodyrates);
-  bool pub_attitude_target(const double thrust, const std::array<double, 4> quat);
+
+  bool pub_bodyrates_target(const double thrust,
+                            const std::array<double, 3> &bodyrates);
+  bool pub_attitude_target(const double thrust,
+                           const std::array<double, 4> quat);
   void pub_allow_cmdctrl(bool allow);
   void spin_once();
 
@@ -99,12 +110,13 @@ private:
   std::shared_ptr<Px4State> px4_state_;
 
   rclcpp::Subscription<mavros_msgs::msg::State>::SharedPtr px4_state_sub;
-  rclcpp::Subscription<mavros_msgs::msg::ExtendedState>::SharedPtr px4_extended_state_sub;
+  rclcpp::Subscription<mavros_msgs::msg::ExtendedState>::SharedPtr
+      px4_extended_state_sub;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr px4_imu_sub;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr px4_bat_sub;
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr vio_odom_sub;
-  rclcpp::Subscription<px4msgs::msg::Command>::SharedPtr ctrl_cmd_sub;
+  rclcpp::Subscription<px4ctrl_msgs::msg::Command>::SharedPtr ctrl_cmd_sub;
 
   rclcpp::Publisher<mavros_msgs::msg::AttitudeTarget>::SharedPtr px4_cmd_pub;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr allow_cmdctrl_pub;
