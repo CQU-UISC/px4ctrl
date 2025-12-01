@@ -2,7 +2,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/CQU-UISC/px4ctrl">
+  <a href="https://github.com/Luxru/px4ctrl">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
   <h3 align="center">UISC Lab Px4Ctrl</h3>
@@ -72,7 +72,7 @@ To use this repository, you are required to install both  [px4ctrl_client](https
 
 ### Installation
 ```
-git clone https://github.com/CQU-UISC/px4ctrl.git
+git clone https://github.com/Luxru/px4ctrl.git
 cd px4ctrl
 git submodule update --init --recursive
 mkdir build && cd build
