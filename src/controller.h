@@ -91,6 +91,8 @@ public:
                            const clock::time_point &est_time);
   void resetThrustMapping();
   double thrustMap(const double collective_thrust);
+  double getThr2AccEstimate() const { return thr2acc; }
+  double getHoverThrustEstimate() const { return quad_params_.g / thr2acc; }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 private:

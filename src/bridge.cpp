@@ -13,6 +13,8 @@ Px4CtrlRosBridge::Px4CtrlRosBridge(const rclcpp::Node::SharedPtr &node,
   px4_extended_state_sub =
       node->create_subscription<mavros_msgs::msg::ExtendedState>(
           "/mavros/extended_state", 10, build_px4ros_cb(px4_state_->ext_state));
+  px4_rcin_sub = node->create_subscription<mavros_msgs::msg::RCIn>(
+      "/mavros/rc/in", rclcpp::SensorDataQoS(), build_px4ros_cb(px4_state_->rcin));
 
   vio_odom_sub = node->create_subscription<nav_msgs::msg::Odometry>(
       "/px4ctrl/ext_odom", rclcpp::SensorDataQoS(),

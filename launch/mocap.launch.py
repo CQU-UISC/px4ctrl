@@ -14,8 +14,8 @@ def generate_launch_description():
                 'px4ctrl_base_dir': PathJoinSubstitution([
                     FindPackageShare('px4ctrl')
                 ]),
-                'px4ctrl_cfg_name': 'xi35.yaml',
-                'px4ctrl_zmq_cfg_name': 'zmq.yaml',
+                'px4ctrl_cfg_name': 'xi35.json',
+                'px4ctrl_transport_cfg_name': 'transport.json',
             }],
             remappings=[
                 ('/px4ctrl/ext_odom', '/ekf_estimate'),

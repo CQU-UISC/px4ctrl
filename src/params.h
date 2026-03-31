@@ -1,9 +1,16 @@
 #pragma once
+
+#include <array>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <ostream>
 #include <spdlog/spdlog.h>
-#include <yaml-cpp/exceptions.h>
-#include <yaml-cpp/node/node.h>
-#include <yaml-cpp/yaml.h>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+
+#include "json.hpp"
 
 namespace px4ctrl {
 
@@ -14,14 +21,13 @@ enum class ThrustMod { ESTIMATE, THRUSTMAP };
 inline ThrustMod thrustModFromString(const std::string &str) {
   if (str == "ESTIMATE") {
     return ThrustMod::ESTIMATE;
-  } else if (str == "THRUSTMAP") {
-    return ThrustMod::THRUSTMAP;
-  } else {
-    spdlog::error("Invalid ThrustMod type:{}", str);
-    throw std::runtime_error(
-        "Invalid ThrustMod type, must be ESTIMATE or THRUSTMAP, but got " +
-        str);
   }
+  if (str == "THRUSTMAP") {
+    return ThrustMod::THRUSTMAP;
+  }
+  spdlog::error("Invalid ThrustMod type:{}", str);
+  throw std::runtime_error(
+      "Invalid ThrustMod type, must be ESTIMATE or THRUSTMAP, but got " + str);
 }
 
 struct QuadrotorParams {
@@ -41,37 +47,60 @@ enum class Guard { HOLD, LAND, DISARM };
 inline Guard guardFromString(const std::string &str) {
   if (str == "HOLD") {
     return Guard::HOLD;
-  } else if (str == "LAND") {
-    return Guard::LAND;
-  } else if (str == "DISARM") {
-    return Guard::DISARM;
-  } else {
-    spdlog::error("Invalid Guard type:{}", str);
-    throw std::runtime_error(
-        "Invalid Guard type, must be HOLD, LAND or DISARM, but got " + str);
   }
+  if (str == "LAND") {
+    return Guard::LAND;
+  }
+  if (str == "DISARM") {
+    return Guard::DISARM;
+  }
+  spdlog::error("Invalid Guard type:{}", str);
+  throw std::runtime_error(
+      "Invalid Guard type, must be HOLD, LAND or DISARM, but got " + str);
 }
 
 struct GuardParams {
-  uint freq;
-  uint land_timeout; // ms after this time, disarm
+  uint32_t freq;
+  uint32_t land_timeout; // ms after this time, disarm
 
-  uint mavros_timeout; // ms
+  uint32_t mavros_timeout; // ms
   Guard mavros_triggered;
 
-  uint odom_timeout; // ms
-  uint odom_min_hz;  // Hz
+  uint32_t odom_timeout; // ms
+  uint32_t odom_min_hz;  // Hz
   Guard odom_triggered;
 
-  uint ui_timeout; // ms
+  uint32_t ui_timeout; // ms
   Guard ui_triggered;
+
+  bool use_rc = false;
+  uint32_t rc_timeout = 500; // ms
+  Guard rc_triggered = Guard::LAND;
 
   double low_battery_voltage; // V
   Guard lowvolt_triggered;
+
+  // extended safety controls
+  Guard localization_loss_triggered = Guard::LAND;
+
+  bool enable_geofence = false;
+  std::array<double, 3> geofence_min = {-1000.0, -1000.0, -1000.0};
+  std::array<double, 3> geofence_max = {1000.0, 1000.0, 1000.0};
+  Guard geofence_triggered = Guard::HOLD;
+
+  bool enable_attitude_fence = false;
+  double max_roll_deg = -1.0;  // -1 means unlimited, otherwise (0, 180]
+  double max_pitch_deg = -1.0; // -1 means unlimited, otherwise (0, 180]
+  double max_yaw_deg = -1.0;   // -1 means unlimited, otherwise (0, 180]
+  Guard attitude_triggered = Guard::HOLD;
+
+  bool enable_velocity_fence = false;
+  double max_velocity_norm = 10.0;
+  Guard velocity_triggered = Guard::HOLD;
 };
 
 struct StateMachineParams {
-  uint freq;
+  uint32_t freq;
   double l2_takeoff_height;            // m
   double l2_idle_disarm_time;          // ms
   double l2_cmd_ctrl_min_hz;           // Hz
@@ -90,30 +119,29 @@ enum class ControlType {
 inline ControlType controlTypeFromString(const std::string &str) {
   if (str == "BODY_RATES") {
     return ControlType::BODY_RATES;
-  } else if (str == "ATTITUDE") {
-    return ControlType::ATTITUDE;
-  } else {
-    spdlog::error("Invalid ControlType type:{}", str);
-    throw std::runtime_error(
-        "Invalid ControlType type, must be BODY_RATES or ATTITUDE, but got " +
-        str);
   }
+  if (str == "ATTITUDE") {
+    return ControlType::ATTITUDE;
+  }
+  spdlog::error("Invalid ControlType type:{}", str);
+  throw std::runtime_error(
+      "Invalid ControlType type, must be BODY_RATES or ATTITUDE, but got " + str);
 }
 
-  struct ControlParams{
-      uint freq;
-      double Kp_pos;
-      double Kd_pos;
-      double Ki_pos;
-      double max_pos_error;
-      double max_vel_error;
-      double max_vel_int;
+struct ControlParams {
+  uint32_t freq;
+  double Kp_pos;
+  double Kd_pos;
+  double Ki_pos;
+  double max_pos_error;
+  double max_vel_error;
+  double max_vel_int;
 
-      ControlType type;
-      double Kw_rp;
-      double Kw_yaw;
-      double max_bodyrate_error;
-  };
+  ControlType type;
+  double Kw_rp;
+  double Kw_yaw;
+  double max_bodyrate_error;
+};
 
 } // namespace params
 
@@ -123,124 +151,199 @@ struct Px4CtrlParams {
   params::StateMachineParams statemachine_params;
   params::ControlParams control_params;
 
-  inline static Px4CtrlParams load(const std::string &file) {
-    Px4CtrlParams params;
-    try {
-      YAML::Node config = YAML::LoadFile(file);
-      if (!config["quadrotor"]) {
-        spdlog::error("quadrotor params not found");
-        throw std::runtime_error("quadrotor params not found");
-      }
-      if (!config["guard"]) {
-        spdlog::error("guard params not found");
-        throw std::runtime_error("guard params not found");
-      }
-      if (!config["px4ctrl"]) {
-        spdlog::error("px4ctrl params not found");
-        throw std::runtime_error("px4ctrl params not found");
-      }
-      if (!config["controller"]) {
-        spdlog::error("control params not found");
-        throw std::runtime_error("control params not found");
-      }
-      auto quadrotor = config["quadrotor"];
-      if (!quadrotor["mass"] || !quadrotor["inertia"] || !quadrotor["g"] ||
-          !quadrotor["thrustmod"] || !quadrotor["thrustmap"] ||
-          !quadrotor["init_hover_thrust"] || !quadrotor["max_thrust"] ||
-          !quadrotor["min_thrust"] || !quadrotor["max_bodyrate"]) {
-        spdlog::error("quadrotor params not complete");
-        throw std::runtime_error("quadrotor params not complete");
-      }
-      params.quadrotor_params.mass = quadrotor["mass"].as<double>();
-      params.quadrotor_params.inertia =
-          quadrotor["inertia"].as<std::array<double, 3>>();
-      params.quadrotor_params.g = quadrotor["g"].as<double>();
-      params.quadrotor_params.thrustmod =
-          params::thrustModFromString(quadrotor["thrustmod"].as<std::string>());
-      params.quadrotor_params.thrustmap =
-          quadrotor["thrustmap"].as<std::array<double, 3>>();
-      params.quadrotor_params.init_hover_thrust =
-          quadrotor["init_hover_thrust"].as<double>();
-      params.quadrotor_params.max_thrust = quadrotor["max_thrust"].as<double>();
-      params.quadrotor_params.min_thrust = quadrotor["min_thrust"].as<double>();
-      params.quadrotor_params.max_bodyrate =
-          quadrotor["max_bodyrate"].as<double>();
-
-      auto guard = config["guard"];
-      if (!guard["freq"] || !guard["land_timeout"] ||
-          !guard["mavros_timeout"] || !guard["mavros_triggered"] ||
-          !guard["odom_timeout"] || !guard["odom_triggered"] ||
-          !guard["ui_timeout"] || !guard["ui_triggered"] ||
-          !guard["low_battery_voltage"] || !guard["lowvolt_triggered"]) {
-        spdlog::error("guard params not complete");
-        throw std::runtime_error("guard params not complete");
-      }
-      params.guard_params.freq = guard["freq"].as<uint>();
-      params.guard_params.land_timeout = guard["land_timeout"].as<uint>();
-      params.guard_params.mavros_timeout = guard["mavros_timeout"].as<uint>();
-      params.guard_params.mavros_triggered =
-          params::guardFromString(guard["mavros_triggered"].as<std::string>());
-      params.guard_params.odom_timeout = guard["odom_timeout"].as<uint>();
-      params.guard_params.odom_min_hz = guard["odom_min_hz"].as<uint>();
-      params.guard_params.odom_triggered =
-          params::guardFromString(guard["odom_triggered"].as<std::string>());
-      params.guard_params.ui_timeout = guard["ui_timeout"].as<uint>();
-      params.guard_params.ui_triggered =
-          params::guardFromString(guard["ui_triggered"].as<std::string>());
-      params.guard_params.low_battery_voltage =
-          guard["low_battery_voltage"].as<double>();
-      params.guard_params.lowvolt_triggered =
-          params::guardFromString(guard["lowvolt_triggered"].as<std::string>());
-
-      auto px4ctrl = config["px4ctrl"];
-      if (!px4ctrl["freq"] || !px4ctrl["l2_takeoff_height"] ||
-          !px4ctrl["l2_idle_disarm_time"] || !px4ctrl["l2_cmd_ctrl_min_hz"] ||
-          !px4ctrl["l2_takeoff_landing_speed"]) {
-        spdlog::error("px4ctrl params not complete");
-        throw std::runtime_error("px4ctrl params not complete");
-      }
-      params.statemachine_params.freq = px4ctrl["freq"].as<uint>();
-      params.statemachine_params.l2_takeoff_height =
-          px4ctrl["l2_takeoff_height"].as<double>();
-      params.statemachine_params.l2_idle_disarm_time =
-          px4ctrl["l2_idle_disarm_time"].as<double>();
-      params.statemachine_params.l2_cmd_ctrl_min_hz =
-          px4ctrl["l2_cmd_ctrl_min_hz"].as<double>();
-      params.statemachine_params.l2_takeoff_landing_speed =
-          px4ctrl["l2_takeoff_landing_speed"].as<double>();
-      params.statemachine_params.l2_land_position_deviation_c =
-          px4ctrl["l2_land_position_deviation_c"].as<double>();
-      params.statemachine_params.l2_land_velocity_thr_c =
-          px4ctrl["l2_land_velocity_thr_c"].as<double>();
-      params.statemachine_params.l2_land_time_keep_c =
-          px4ctrl["l2_land_time_keep_c"].as<double>();
-
-      auto control = config["controller"];
-      if(!control["freq"] || !control["Kp_pos"] || !control["Kd_pos"] || !control["Ki_pos"] || !control["max_pos_error"] 
-          || !control["max_vel_error"] || !control["max_vel_int"] || !control["type"] 
-          || !control["Kw_rp"] ||!control["Kw_yaw"] || !control["max_bodyrate_error"]){
-          spdlog::error("control params not complete");
-          throw std::runtime_error("control params not complete");
-      }
-      params.control_params.freq = control["freq"].as<uint>();
-      params.control_params.Kp_pos = control["Kp_pos"].as<double>();
-      params.control_params.Kd_pos = control["Kd_pos"].as<double>();
-      params.control_params.Ki_pos = control["Ki_pos"].as<double>();
-      params.control_params.max_pos_error = control["max_pos_error"].as<double>();
-      params.control_params.max_vel_error = control["max_vel_error"].as<double>();    
-      params.control_params.max_vel_int = control["max_vel_int"].as<double>();
-      params.control_params.type = params::controlTypeFromString(control["type"].as<std::string>());
-      params.control_params.Kw_rp = control["Kw_rp"].as<double>();
-      params.control_params.Kw_yaw = control["Kw_yaw"].as<double>();
-      params.control_params.max_bodyrate_error = control["max_bodyrate_error"].as<double>();
-    } catch (const YAML::BadFile &e) {
-      spdlog::error("error:{}", e.what());
-      throw e;
-    } catch (const YAML::ParserException &e) {
-      spdlog::error("error:{}", e.what());
-      throw e;
+private:
+  template <typename T>
+  static T json_required(const nlohmann::json &node, const char *key,
+                         const char *section) {
+    if (!node.contains(key)) {
+      throw std::runtime_error(std::string(section) + " missing key: " + key);
     }
+    return node.at(key).get<T>();
+  }
+
+  static Px4CtrlParams load_json(const std::string &file) {
+    Px4CtrlParams params;
+
+    std::ifstream ifs(file);
+    if (!ifs.is_open()) {
+      throw std::runtime_error("Failed to open config file: " + file);
+    }
+
+    nlohmann::json config;
+    ifs >> config;
+
+    if (!config.contains("quadrotor") || !config.contains("guard") ||
+        !config.contains("px4ctrl") || !config.contains("controller")) {
+      throw std::runtime_error(
+          "Config must contain quadrotor/guard/px4ctrl/controller sections");
+    }
+
+    const auto &quadrotor = config.at("quadrotor");
+    params.quadrotor_params.mass =
+        json_required<double>(quadrotor, "mass", "quadrotor");
+    params.quadrotor_params.inertia =
+        json_required<std::array<double, 3>>(quadrotor, "inertia", "quadrotor");
+    params.quadrotor_params.g = json_required<double>(quadrotor, "g", "quadrotor");
+    params.quadrotor_params.thrustmod = params::thrustModFromString(
+        json_required<std::string>(quadrotor, "thrustmod", "quadrotor"));
+    params.quadrotor_params.thrustmap = json_required<std::array<double, 3>>(
+        quadrotor, "thrustmap", "quadrotor");
+    params.quadrotor_params.init_hover_thrust =
+        json_required<double>(quadrotor, "init_hover_thrust", "quadrotor");
+    params.quadrotor_params.max_thrust =
+        json_required<double>(quadrotor, "max_thrust", "quadrotor");
+    params.quadrotor_params.min_thrust =
+        json_required<double>(quadrotor, "min_thrust", "quadrotor");
+    params.quadrotor_params.max_bodyrate =
+        json_required<double>(quadrotor, "max_bodyrate", "quadrotor");
+
+    const auto &guard = config.at("guard");
+    params.guard_params.freq = json_required<uint32_t>(guard, "freq", "guard");
+    params.guard_params.land_timeout =
+        json_required<uint32_t>(guard, "land_timeout", "guard");
+    params.guard_params.mavros_timeout =
+        json_required<uint32_t>(guard, "mavros_timeout", "guard");
+    params.guard_params.mavros_triggered = params::guardFromString(
+        json_required<std::string>(guard, "mavros_triggered", "guard"));
+    params.guard_params.odom_timeout =
+        json_required<uint32_t>(guard, "odom_timeout", "guard");
+    params.guard_params.odom_min_hz =
+        json_required<uint32_t>(guard, "odom_min_hz", "guard");
+    params.guard_params.odom_triggered = params::guardFromString(
+        json_required<std::string>(guard, "odom_triggered", "guard"));
+    params.guard_params.ui_timeout =
+        json_required<uint32_t>(guard, "ui_timeout", "guard");
+    params.guard_params.ui_triggered = params::guardFromString(
+        json_required<std::string>(guard, "ui_triggered", "guard"));
+    params.guard_params.use_rc =
+        guard.value("use_rc", params.guard_params.use_rc);
+    params.guard_params.rc_timeout =
+        guard.value("rc_timeout", params.guard_params.rc_timeout);
+    if (guard.contains("rc_triggered")) {
+      params.guard_params.rc_triggered =
+          params::guardFromString(guard.at("rc_triggered").get<std::string>());
+    }
+    params.guard_params.low_battery_voltage =
+        json_required<double>(guard, "low_battery_voltage", "guard");
+    params.guard_params.lowvolt_triggered = params::guardFromString(
+        json_required<std::string>(guard, "lowvolt_triggered", "guard"));
+
+    if (guard.contains("localization_loss_triggered")) {
+      params.guard_params.localization_loss_triggered = params::guardFromString(
+          guard.at("localization_loss_triggered").get<std::string>());
+    } else {
+      params.guard_params.localization_loss_triggered =
+          params.guard_params.odom_triggered;
+    }
+
+    params.guard_params.enable_geofence =
+        guard.value("enable_geofence", params.guard_params.enable_geofence);
+    if (guard.contains("geofence_min")) {
+      params.guard_params.geofence_min =
+          guard.at("geofence_min").get<std::array<double, 3>>();
+    }
+    if (guard.contains("geofence_max")) {
+      params.guard_params.geofence_max =
+          guard.at("geofence_max").get<std::array<double, 3>>();
+    }
+    if (guard.contains("geofence_triggered")) {
+      params.guard_params.geofence_triggered = params::guardFromString(
+          guard.at("geofence_triggered").get<std::string>());
+    }
+
+    params.guard_params.enable_attitude_fence =
+        guard.value("enable_attitude_fence",
+                    params.guard_params.enable_attitude_fence);
+    if (guard.contains("max_roll_deg")) {
+      params.guard_params.max_roll_deg =
+          guard.at("max_roll_deg").get<double>();
+    }
+    if (guard.contains("max_pitch_deg")) {
+      params.guard_params.max_pitch_deg =
+          guard.at("max_pitch_deg").get<double>();
+    }
+    if (guard.contains("max_yaw_deg")) {
+      params.guard_params.max_yaw_deg = guard.at("max_yaw_deg").get<double>();
+    } else if (guard.contains("max_tilt_deg")) {
+      // Backward compatibility for old config key.
+      const double max_tilt = guard.at("max_tilt_deg").get<double>();
+      params.guard_params.max_roll_deg = max_tilt;
+      params.guard_params.max_pitch_deg = max_tilt;
+      params.guard_params.max_yaw_deg = -1.0;
+    }
+    if (guard.contains("attitude_triggered")) {
+      params.guard_params.attitude_triggered = params::guardFromString(
+          guard.at("attitude_triggered").get<std::string>());
+    }
+
+    params.guard_params.enable_velocity_fence =
+        guard.value("enable_velocity_fence",
+                    params.guard_params.enable_velocity_fence);
+    params.guard_params.max_velocity_norm =
+        guard.value("max_velocity_norm", params.guard_params.max_velocity_norm);
+    if (guard.contains("velocity_triggered")) {
+      params.guard_params.velocity_triggered = params::guardFromString(
+          guard.at("velocity_triggered").get<std::string>());
+    }
+
+    const auto &px4ctrl = config.at("px4ctrl");
+    params.statemachine_params.freq =
+        json_required<uint32_t>(px4ctrl, "freq", "px4ctrl");
+    params.statemachine_params.l2_takeoff_height =
+        json_required<double>(px4ctrl, "l2_takeoff_height", "px4ctrl");
+    params.statemachine_params.l2_idle_disarm_time =
+        json_required<double>(px4ctrl, "l2_idle_disarm_time", "px4ctrl");
+    params.statemachine_params.l2_cmd_ctrl_min_hz =
+        json_required<double>(px4ctrl, "l2_cmd_ctrl_min_hz", "px4ctrl");
+    params.statemachine_params.l2_takeoff_landing_speed =
+        json_required<double>(px4ctrl, "l2_takeoff_landing_speed", "px4ctrl");
+    params.statemachine_params.l2_land_position_deviation_c =
+        json_required<double>(px4ctrl, "l2_land_position_deviation_c", "px4ctrl");
+    params.statemachine_params.l2_land_velocity_thr_c =
+        json_required<double>(px4ctrl, "l2_land_velocity_thr_c", "px4ctrl");
+    params.statemachine_params.l2_land_time_keep_c =
+        json_required<double>(px4ctrl, "l2_land_time_keep_c", "px4ctrl");
+
+    const auto &control = config.at("controller");
+    params.control_params.freq =
+        json_required<uint32_t>(control, "freq", "controller");
+    params.control_params.Kp_pos =
+        json_required<double>(control, "Kp_pos", "controller");
+    params.control_params.Kd_pos =
+        json_required<double>(control, "Kd_pos", "controller");
+    params.control_params.Ki_pos =
+        json_required<double>(control, "Ki_pos", "controller");
+    params.control_params.max_pos_error =
+        json_required<double>(control, "max_pos_error", "controller");
+    params.control_params.max_vel_error =
+        json_required<double>(control, "max_vel_error", "controller");
+    params.control_params.max_vel_int =
+        json_required<double>(control, "max_vel_int", "controller");
+    params.control_params.type = params::controlTypeFromString(
+        json_required<std::string>(control, "type", "controller"));
+    params.control_params.Kw_rp =
+        json_required<double>(control, "Kw_rp", "controller");
+    params.control_params.Kw_yaw =
+        json_required<double>(control, "Kw_yaw", "controller");
+    params.control_params.max_bodyrate_error =
+        json_required<double>(control, "max_bodyrate_error", "controller");
+
     return params;
+  }
+
+public:
+  inline static Px4CtrlParams load(const std::string &file) {
+    try {
+      const auto ext = std::filesystem::path(file).extension().string();
+      if (ext == ".json") {
+        return load_json(file);
+      }
+      throw std::runtime_error("Unsupported config format: " + file +
+                               " (only .json is supported)");
+    } catch (const std::exception &e) {
+      spdlog::error("error:{}", e.what());
+      throw;
+    }
   }
 
   friend inline std::ostream &operator<<(std::ostream &os,
@@ -260,26 +363,35 @@ struct Px4CtrlParams {
        << std::endl;
     os << "max_thrust:" << px4paras.quadrotor_params.max_thrust << std::endl;
     os << "min_thrust:" << px4paras.quadrotor_params.min_thrust << std::endl;
-    os << "max_bodyrate:" << px4paras.quadrotor_params.max_bodyrate
-       << std::endl;
+    os << "max_bodyrate:" << px4paras.quadrotor_params.max_bodyrate << std::endl;
 
     os << "GuardParams:" << std::endl;
     os << "freq:" << px4paras.guard_params.freq << std::endl;
     os << "land_timeout:" << px4paras.guard_params.land_timeout << std::endl;
-    os << "mavros_timeout:" << px4paras.guard_params.mavros_timeout
-       << std::endl;
+    os << "mavros_timeout:" << px4paras.guard_params.mavros_timeout << std::endl;
     os << "mavros_triggered:"
        << static_cast<int>(px4paras.guard_params.mavros_triggered) << std::endl;
     os << "odom_timeout:" << px4paras.guard_params.odom_timeout << std::endl;
     os << "odom_triggered:"
        << static_cast<int>(px4paras.guard_params.odom_triggered) << std::endl;
     os << "ui_timeout:" << px4paras.guard_params.ui_timeout << std::endl;
-    os << "ui_triggered:"
-       << static_cast<int>(px4paras.guard_params.ui_triggered) << std::endl;
+    os << "ui_triggered:" << static_cast<int>(px4paras.guard_params.ui_triggered)
+       << std::endl;
+    os << "use_rc:" << px4paras.guard_params.use_rc << std::endl;
+    os << "rc_timeout:" << px4paras.guard_params.rc_timeout << std::endl;
+    os << "rc_triggered:" << static_cast<int>(px4paras.guard_params.rc_triggered)
+       << std::endl;
     os << "low_battery_voltage:" << px4paras.guard_params.low_battery_voltage
        << std::endl;
     os << "lowvolt_triggered:"
-       << static_cast<int>(px4paras.guard_params.lowvolt_triggered)
+       << static_cast<int>(px4paras.guard_params.lowvolt_triggered) << std::endl;
+    os << "enable_geofence:" << px4paras.guard_params.enable_geofence << std::endl;
+    os << "enable_attitude_fence:" << px4paras.guard_params.enable_attitude_fence
+       << std::endl;
+    os << "max_roll_deg:" << px4paras.guard_params.max_roll_deg << std::endl;
+    os << "max_pitch_deg:" << px4paras.guard_params.max_pitch_deg << std::endl;
+    os << "max_yaw_deg:" << px4paras.guard_params.max_yaw_deg << std::endl;
+    os << "enable_velocity_fence:" << px4paras.guard_params.enable_velocity_fence
        << std::endl;
 
     os << "Px4CtrlParams:" << std::endl;
@@ -304,7 +416,8 @@ struct Px4CtrlParams {
     os << "type:" << static_cast<int>(px4paras.control_params.type) << std::endl;
     os << "Kw_rp:" << px4paras.control_params.Kw_rp << std::endl;
     os << "Kw_yaw:" << px4paras.control_params.Kw_yaw << std::endl;
-    os << "max_bodyrate_error:" << px4paras.control_params.max_bodyrate_error << std::endl;
+    os << "max_bodyrate_error:" << px4paras.control_params.max_bodyrate_error
+       << std::endl;
     return os;
   }
 
@@ -314,4 +427,5 @@ struct Px4CtrlParams {
     return ss.str();
   }
 };
+
 } // namespace px4ctrl

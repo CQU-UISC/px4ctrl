@@ -9,14 +9,17 @@ std::string file_path = __FILE__;
 std::string ws = std::filesystem::path(file_path).parent_path().string();
 
 TEST(px4ctrl, TestLoadParams){
-    // file path in current working directory
-    std::string file = ws + "/xi35.yaml";
+    std::string file = ws + "/../config/xi35.json";
     EXPECT_NO_THROW(Px4CtrlParams::load(file));
 }
 
 TEST(px4ctrl, TestPrintParams){
-    // file path in current working directory
-    std::string file = ws + "/xi35.yaml";
+    std::string file = ws + "/../config/xi35.json";
     Px4CtrlParams params = Px4CtrlParams::load(file);
     std::cout << params << std::endl;
+}
+
+TEST(px4ctrl, TestLoadJsonParams){
+    std::string file = ws + "/../config/xi35.json";
+    EXPECT_NO_THROW(Px4CtrlParams::load(file));
 }

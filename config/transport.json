@@ -1,0 +1,14 @@
+{
+  "backend": "zenoh",
+  "server_topic": "px4s",
+  "client_topic": "px4c",
+  "log_topic": "px4log",
+  "telemetry_hz": 200,
+  "zenoh": {
+    "mode": "peer",
+    "connect": "",
+    "listen": "tcp/0.0.0.0:7447",
+    "multicast_scouting": true,
+    "scouting_timeout_ms": 1000
+  }
+}

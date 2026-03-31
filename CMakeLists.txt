@@ -9,13 +9,11 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 option(BUILD_TESTS "Build tests" OFF)
 
-add_subdirectory(modules/yaml-cpp)
-add_subdirectory(modules/libzmq)
-option(CPPZMQ_BUILD_TESTS "" OFF)
-add_subdirectory(modules/cppzmq)
 add_subdirectory(modules/spdlog)
 
 find_package(Eigen3 REQUIRED) 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ZENOHC REQUIRED zenohc)
 
 # Build on ros
 find_package(ament_cmake REQUIRED)
@@ -28,6 +26,7 @@ find_package(px4ctrl_msgs REQUIRED)
 
 include_directories(
   ${EIGEN_INCLUDE_DIRS}
+  ${ZENOHC_INCLUDE_DIRS}
 )
 
 add_executable(px4ctrl_node
@@ -50,9 +49,13 @@ ament_target_dependencies(px4ctrl_node
 target_link_libraries(px4ctrl_node
   spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
   Eigen3::Eigen
-  yaml-cpp::yaml-cpp
-  cppzmq
+  ${ZENOHC_LIBRARIES}
 )
+target_link_directories(px4ctrl_node PRIVATE ${ZENOHC_LIBRARY_DIRS})
+target_compile_definitions(px4ctrl_node PRIVATE ZENOH_LINUX)
+foreach(_libdir IN LISTS ZENOHC_LIBRARY_DIRS)
+  target_link_options(px4ctrl_node PRIVATE "-Wl,-rpath,${_libdir}")
+endforeach()
 
 install(TARGETS px4ctrl_node
   DESTINATION lib/${PROJECT_NAME}
@@ -80,9 +83,14 @@ if(BUILD_TESTS)
     PRIVATE GTest::GTest GTest::Main
     PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>
     PRIVATE Eigen3::Eigen
-    PRIVATE yaml-cpp::yaml-cpp
-    PRIVATE cppzmq
+    PRIVATE ${ZENOHC_LIBRARIES}
   )
+  target_include_directories(px4ctrl_tests PRIVATE src)
+  target_link_directories(px4ctrl_tests PRIVATE ${ZENOHC_LIBRARY_DIRS})
+  target_compile_definitions(px4ctrl_tests PRIVATE ZENOH_LINUX)
+  foreach(_libdir IN LISTS ZENOHC_LIBRARY_DIRS)
+    target_link_options(px4ctrl_tests PRIVATE "-Wl,-rpath,${_libdir}")
+  endforeach()
 
   include(GoogleTest)
   gtest_discover_tests(px4ctrl_tests)

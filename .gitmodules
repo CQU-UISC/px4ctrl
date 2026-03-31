@@ -1,12 +1,3 @@
-[submodule "modules/yaml-cpp"]
-	path = modules/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp
-[submodule "modules/libzmq"]
-	path = modules/libzmq
-	url = https://github.com/zeromq/libzmq.git
-[submodule "modules/cppzmq"]
-	path = modules/cppzmq
-	url = https://github.com/zeromq/cppzmq.git
 [submodule "modules/spdlog"]
 	path = modules/spdlog
 	url = https://github.com/gabime/spdlog.git

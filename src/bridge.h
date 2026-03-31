@@ -16,6 +16,7 @@
 
 #include <mavros_msgs/msg/attitude_target.hpp>
 #include <mavros_msgs/msg/extended_state.hpp>
+#include <mavros_msgs/msg/rc_in.hpp>
 #include <mavros_msgs/msg/state.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <px4ctrl_msgs/msg/command.hpp>
@@ -45,6 +46,7 @@ concept IPX4_ITEM = requires(T t) {
     remove_cvref_t<T>(t)
   } -> any_of<mavros_msgs::msg::State::ConstSharedPtr,
               mavros_msgs::msg::ExtendedState::ConstSharedPtr,
+              mavros_msgs::msg::RCIn::ConstSharedPtr,
               sensor_msgs::msg::BatteryState::ConstSharedPtr,
               nav_msgs::msg::Odometry::ConstSharedPtr,
               sensor_msgs::msg::Imu::ConstSharedPtr,
@@ -63,6 +65,7 @@ struct Px4State {
   IPX4_STATE<mavros_msgs::msg::State::ConstSharedPtr, clock::time_point> state;
   IPX4_STATE<mavros_msgs::msg::ExtendedState::ConstSharedPtr, clock::time_point>
       ext_state;
+  IPX4_STATE<mavros_msgs::msg::RCIn::ConstSharedPtr, clock::time_point> rcin;
   IPX4_STATE<sensor_msgs::msg::BatteryState::ConstSharedPtr, clock::time_point>
       battery;
   IPX4_STATE<nav_msgs::msg::Odometry::ConstSharedPtr, clock::time_point> odom;
@@ -75,6 +78,8 @@ struct Px4State {
         mavros_msgs::msg::State::ConstSharedPtr, clock::time_point>>>();
     ext_state = std::make_shared<Px4Data<std::pair<
         mavros_msgs::msg::ExtendedState::ConstSharedPtr, clock::time_point>>>();
+    rcin = std::make_shared<Px4Data<std::pair<
+        mavros_msgs::msg::RCIn::ConstSharedPtr, clock::time_point>>>();
     battery = std::make_shared<Px4Data<std::pair<
         sensor_msgs::msg::BatteryState::ConstSharedPtr, clock::time_point>>>();
     odom = std::make_shared<Px4Data<std::pair<
@@ -112,6 +117,7 @@ private:
   rclcpp::Subscription<mavros_msgs::msg::State>::SharedPtr px4_state_sub;
   rclcpp::Subscription<mavros_msgs::msg::ExtendedState>::SharedPtr
       px4_extended_state_sub;
+  rclcpp::Subscription<mavros_msgs::msg::RCIn>::SharedPtr px4_rcin_sub;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr px4_imu_sub;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr px4_bat_sub;
 
