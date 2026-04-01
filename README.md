@@ -80,7 +80,7 @@ Control selection in FSM:
 Build in your ROS 2 workspace with `colcon`:
 
 ```bash
-cd /home/lux/orinctrl_ws
+cd px4ctrl_ws
 colcon build --packages-select px4ctrl --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
@@ -115,7 +115,7 @@ Angle limit rule:
 - `-1` means unlimited.
 - Otherwise valid range is `(0, 180]` degrees.
 
-## RC Gating Behavior (`use_rc`)
+## RC Gating Behavior
 When `guard.use_rc = true`:
 - Startup is blocked until valid `mavros_msgs/RCIn` is present.
 - RC loss during flight triggers guard action (`rc_triggered`).
