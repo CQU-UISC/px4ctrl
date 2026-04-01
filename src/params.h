@@ -111,21 +111,21 @@ struct StateMachineParams {
 };
 
 enum class ControlType {
-  BODY_RATES,
+  BODYRATES,
   ATTITUDE,
   // ROTOR_THRUST not implemented in ROS1
 };
 
 inline ControlType controlTypeFromString(const std::string &str) {
-  if (str == "BODY_RATES") {
-    return ControlType::BODY_RATES;
+  if (str == "BODYRATES") {
+    return ControlType::BODYRATES;
   }
   if (str == "ATTITUDE") {
     return ControlType::ATTITUDE;
   }
   spdlog::error("Invalid ControlType type:{}", str);
   throw std::runtime_error(
-      "Invalid ControlType type, must be BODY_RATES or ATTITUDE, but got " + str);
+      "Invalid ControlType type, must be BODYRATES or ATTITUDE, but got " + str);
 }
 
 struct ControlParams {

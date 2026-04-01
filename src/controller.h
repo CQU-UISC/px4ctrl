@@ -41,7 +41,7 @@ struct DesiredState {
     q = Eigen::Quaterniond::Identity();
     yaw = 0;
     yaw_rate = 0;
-    control_attitude = false;//TODO
+    control_attitude = false;
   };
 
   DesiredState(const nav_msgs::msg::Odometry &odom) {
@@ -113,7 +113,6 @@ private:
     }
     return value;
   }
-
   // Thrust mapping
   std::queue<std::pair<clock::time_point, double>> timed_thrust;
   static constexpr double kMinNormalizedCollectiveThrust = 3.0;

@@ -28,7 +28,7 @@
     "max_pos_error": 1.5,
     "max_vel_error": 1.5,
     "max_vel_int": 1.0,
-    "type": "ATTITUDE",
+    "type": "BODYRATES",
     "Kw_rp": 12.0,
     "Kw_yaw": 5.0,
     "max_bodyrate_error": 15.0

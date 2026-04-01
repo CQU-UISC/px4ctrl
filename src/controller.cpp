@@ -67,7 +67,7 @@ ControlCommand Se3Control::runControl(const DesiredState &des,
   auto des_quat = Eigen::Quaterniond(des_rot);
   des_rot = (imu_quat * odom_quat.inverse() * des_quat).toRotationMatrix();
   des_quat = Eigen::Quaterniond(des_rot);
-  if (ctrl_params_.type == params::ControlType::BODY_RATES) {
+  if (ctrl_params_.type == params::ControlType::BODYRATES) {
     const Eigen::Quaterniond q_e = odom_quat.inverse() * des_quat;
     Eigen::Vector3d bodyrates;
     if (q_e.w() >= 0) {
@@ -79,7 +79,7 @@ ControlCommand Se3Control::runControl(const DesiredState &des,
       bodyrates.y() = -2.0 * ctrl_params_.Kw_rp * q_e.y();
       bodyrates.z() = -2.0 * ctrl_params_.Kw_yaw * q_e.z();
     }
-    ret.type = params::ControlType::BODY_RATES;
+    ret.type = params::ControlType::BODYRATES;
     ret.bodyrates = bodyrates;
   } else if (ctrl_params_.type == params::ControlType::ATTITUDE) {
     ret.type = params::ControlType::ATTITUDE;
