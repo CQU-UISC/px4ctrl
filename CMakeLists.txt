@@ -9,8 +9,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 option(BUILD_TESTS "Build tests" OFF)
 
-add_subdirectory(modules/spdlog)
-
+find_package(spdlog REQUIRED)
 find_package(Eigen3 REQUIRED) 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ZENOHC REQUIRED zenohc)
