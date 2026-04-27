@@ -2,6 +2,11 @@
 #include <rmw/types.h>
 #include <spdlog/spdlog.h>
 
+// MAVLink constants (MAV_CMD_COMPONENT_ARM_DISARM = 400)
+#ifndef MAV_CMD_COMPONENT_ARM_DISARM
+#define MAV_CMD_COMPONENT_ARM_DISARM 400
+#endif
+
 namespace px4ctrl {
 
 Px4CtrlRosBridge::Px4CtrlRosBridge(const rclcpp::Node::SharedPtr &node,
@@ -141,7 +146,7 @@ bool Px4CtrlRosBridge::force_disarm() {
     return false;
   }
   auto request = std::make_shared<mavros_msgs::srv::CommandLong::Request>();
-  request->command = 400;
+  request->command = MAV_CMD_COMPONENT_ARM_DISARM;
   request->param1 = 0;
   request->param2 = 21196;
   request->param3 = 0;
@@ -167,9 +172,9 @@ bool Px4CtrlRosBridge::force_disarm() {
 
 bool Px4CtrlRosBridge::pub_bodyrates_target(
     const double thrust,
-    const std::array<double, 3> &bodyrates) { // 输入的油门应该是映射后的px4油门
+    const std::array<double, 3> &bodyrates) {
   mavros_msgs::msg::AttitudeTarget msg;
-  msg.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
+  msg.header.stamp = node->get_clock()->now();
   msg.header.frame_id = std::string("FCU");
 
   msg.type_mask = mavros_msgs::msg::AttitudeTarget::IGNORE_ATTITUDE;
@@ -193,9 +198,9 @@ void Px4CtrlRosBridge::pub_allow_cmdctrl(bool allow) {
 }
 
 bool Px4CtrlRosBridge::pub_attitude_target(
-    const double thrust, const std::array<double, 4> quat) { // w,x,y,z
+    const double thrust, const std::array<double, 4> quat) {
   mavros_msgs::msg::AttitudeTarget msg;
-  msg.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
+  msg.header.stamp = node->get_clock()->now();
   msg.header.frame_id = std::string("FCU");
 
   msg.type_mask = mavros_msgs::msg::AttitudeTarget::IGNORE_ROLL_RATE |

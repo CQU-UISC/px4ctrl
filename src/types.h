@@ -4,7 +4,6 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <string>
 
 namespace px4ctrl {
 using clock = std::chrono::high_resolution_clock;
@@ -64,22 +63,27 @@ private:
  */
 template <typename T> class Observable {
 public:
-  inline const T &value() const { return m_data; }
+  inline T value() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_data;
+  }
 
   inline void post(const T &data) {
+    std::map<const Observer *, Callback<T>> snapshot;
     {
       std::lock_guard<std::mutex> lock(m_mutex);
       m_data = data;
+      snapshot = m_callbacks;
     }
-
-    for (auto it = m_callbacks.begin(); it != m_callbacks.end(); it++) {
-      it->second(m_data);
+    for (auto &[_, cb] : snapshot) {
+      cb(m_data);
     }
   }
 
   inline std::shared_ptr<Observer> observe(Callback<T> callback) {
     auto observer = std::make_shared<Observer>(
         std::bind(&Observable<T>::removeObserver, this, std::placeholders::_1));
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_callbacks[observer.get()] = callback;
     return observer;
   }
@@ -87,18 +91,12 @@ public:
 private:
   friend class Observer;
 
-  std::mutex m_mutex;
+  mutable std::mutex m_mutex;
   T m_data;
-  // callbacks
-  std::map<Observer *, Callback<T>> m_callbacks;
-
+  std::map<const Observer *, Callback<T>> m_callbacks;
   inline void removeObserver(const Observer *observer) {
-    for (auto it = m_callbacks.begin(); it != m_callbacks.end(); it++) {
-      if (it->first == observer) {
-        m_callbacks.erase(it);
-        return;
-      }
-    }
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_callbacks.erase(const_cast<Observer *>(observer));
   }
 };
 

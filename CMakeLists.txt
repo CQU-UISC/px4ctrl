@@ -32,10 +32,9 @@ add_executable(px4ctrl_node
   src/node.cpp
   src/controller.cpp
   src/bridge.cpp
-  src/fsm.cpp
-  src/fsm_guard.cpp
-  src/fsm_control.cpp
-  src/fsm_client.cpp
+  src/coordinator.cpp
+  src/mission_fsm.cpp
+  src/safety_monitor.cpp
   src/server.cpp
 )
 

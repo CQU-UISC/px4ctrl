@@ -1,22 +1,25 @@
 #include <filesystem>
 #include <memory>
 #include <signal.h>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
 #include <string>
 
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include "bridge.h"
-#include "fsm.h"
+#include "coordinator.h"
 #include "server.h"
 
-std::shared_ptr<px4ctrl::Px4Ctrl> px4ctrl_fsm;
+std::shared_ptr<px4ctrl::Coordinator> px4ctrl_coordinator;
 
 void sigintHandler(int sig) {
+  (void)sig;
   spdlog::info("[PX4Ctrl] exit...");
-  px4ctrl_fsm->stop();
+  px4ctrl_coordinator->stop();
 }
 
 int main(int argc, char *argv[]) {
@@ -33,7 +36,6 @@ int main(int argc, char *argv[]) {
     transport_cfg_name = "transport.json";
   }
 
-  // check if cfg exists
   std::string cfg_file = base_dir + "/config/" + cfg_name;
   std::string transport_cfg_file = base_dir + "/config/" + transport_cfg_name;
   if (!std::filesystem::exists(cfg_file)) {
@@ -44,7 +46,7 @@ int main(int argc, char *argv[]) {
     spdlog::error("transport config file not found: {}", transport_cfg_file);
     return -1;
   }
-  // log filenamez
+
   std::time_t now =
       std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   std::string date(30, '\0');
@@ -52,14 +54,12 @@ int main(int argc, char *argv[]) {
                 std::localtime(&now));
   std::string log_file = base_dir + "/log/px4ctrl_" + date + ".log";
 
-  // load params
   auto cfg = px4ctrl::Px4CtrlParams::load(cfg_file);
   auto transport_cfg = px4ctrl::ui::TransportParas::load(transport_cfg_file);
   auto px4ctrl_server = std::make_shared<px4ctrl::ui::Px4Server>(transport_cfg);
   auto zenoh_sink =
       std::make_shared<px4ctrl::ui::zenoh_sink_mt>(px4ctrl_server);
 
-  // init logging
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   auto file_sink =
       std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file, true);
@@ -72,10 +72,12 @@ int main(int argc, char *argv[]) {
   auto px4_state = std::make_shared<px4ctrl::Px4State>();
   auto px4_bridge =
       std::make_shared<px4ctrl::Px4CtrlRosBridge>(node, px4_state);
-  px4ctrl_fsm = std::make_shared<px4ctrl::Px4Ctrl>(
+
+  px4ctrl_coordinator = std::make_shared<px4ctrl::Coordinator>(
       px4_bridge, px4_state, px4ctrl_params, px4ctrl_server);
+
   signal(SIGINT, sigintHandler);
-  px4ctrl_fsm->run();
+  px4ctrl_coordinator->run();
   rclcpp::shutdown();
   spdlog::info("[PX4Ctrl] exited");
   return 0;
