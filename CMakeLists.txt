@@ -36,6 +36,9 @@ add_executable(px4ctrl_node
   src/mission_fsm.cpp
   src/safety_monitor.cpp
   src/server.cpp
+  src/command_builder.cpp
+  src/client_handler.cpp
+  src/telemetry_builder.cpp
 )
 
 ament_target_dependencies(px4ctrl_node

@@ -100,6 +100,8 @@ public:
   // --- Guard state ---
   params::Guard active_guard_action = params::Guard::HOLD;
   uint32_t guard_flags = 0;
+  bool pending_disarm = false;
+  bool disarmed_by_timeout = false; // latch: prevent re-entering failsafe after landing timeout
 
   // --- Client communication ---
   bool has_client_cmd = false;

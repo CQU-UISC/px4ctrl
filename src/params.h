@@ -150,6 +150,7 @@ struct Px4CtrlParams {
   params::GuardParams guard_params;
   params::StateMachineParams statemachine_params;
   params::ControlParams control_params;
+  uint8_t drone_id = 0;  // 0 = accept any, non-zero = reject mismatched client commands
 
 private:
   template <typename T>
@@ -303,6 +304,7 @@ private:
         json_required<double>(px4ctrl, "l2_land_velocity_thr_c", "px4ctrl");
     params.statemachine_params.l2_land_time_keep_c =
         json_required<double>(px4ctrl, "l2_land_time_keep_c", "px4ctrl");
+    params.drone_id = px4ctrl.value("drone_id", params.drone_id);
 
     const auto &control = config.at("controller");
     params.control_params.freq =
@@ -404,6 +406,7 @@ public:
        << px4paras.statemachine_params.l2_cmd_ctrl_min_hz << std::endl;
     os << "l2_takeoff_landing_speed:"
        << px4paras.statemachine_params.l2_takeoff_landing_speed << std::endl;
+    os << "drone_id:" << static_cast<int>(px4paras.drone_id) << std::endl;
 
     os << "ControlParams:" << std::endl;
     os << "freq:" << px4paras.control_params.freq << std::endl;

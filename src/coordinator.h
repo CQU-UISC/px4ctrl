@@ -1,13 +1,16 @@
 #pragma once
 
 #include <memory>
-#include <string>
 
+#include "client_handler.h"
+#include "command_builder.h"
 #include "context.h"
 #include "controller.h"
+#include "log_suppressor.h"
 #include "mission_fsm.h"
 #include "safety_monitor.h"
 #include "server.h"
+#include "telemetry_builder.h"
 #include "types.h"
 
 namespace px4ctrl {
@@ -30,30 +33,12 @@ public:
 private:
   void process();
   void compute_hz();
-  bool essential_ready(const MissionContextSnapshot &snap) const;
-
-  ControlSource select_control_source(const MissionContextSnapshot &snap) const;
-
-  void build_command(const MissionContextSnapshot &snap, ControlSource source,
-                     controller::ControlCommand &ctrl_cmd);
-  void build_proof_alive(const MissionContextSnapshot &snap,
-                         controller::ControlCommand &ctrl_cmd) const;
-  bool build_se3_command(const MissionContextSnapshot &snap,
-                         controller::ControlCommand &ctrl_cmd);
-  bool build_external_command(const MissionContextSnapshot &snap,
-                              controller::ControlCommand &ctrl_cmd);
-  bool build_safe_landing_command(const MissionContextSnapshot &snap,
-                                  controller::ControlCommand &ctrl_cmd);
-
+  static bool essential_ready(const MissionContextSnapshot &snap);
+  void handle_phase_request(MissionPhase requested);
   void apply_control(const controller::ControlCommand &cmd);
   void estimate_thrust_from_imu();
 
-  void on_client_command(const ui::ClientPayload &payload);
-  bool validate_safety_limit(double v) const;
-  void update_safety_limits(const ui::SafetyLimitsPayload &limits);
-  void handle_phase_request(MissionPhase requested);
-
-  ui::ServerPayload build_telemetry();
+  void update_cached_state(const MissionContextSnapshot &snap);
 
   // Components
   std::shared_ptr<Context> ctx_;
@@ -62,21 +47,21 @@ private:
   std::shared_ptr<Px4CtrlParams> params_;
   std::shared_ptr<controller::Se3Control> controller_;
   std::unique_ptr<SafetyMonitor> safety_monitor_;
+  std::unique_ptr<CommandBuilder> command_builder_;
+  std::unique_ptr<ClientCommandHandler> client_handler_;
+  std::unique_ptr<TelemetryBuilder> telemetry_builder_;
 
-  // Observer holders (keep alive)
+  // Observer holders
   Px4DataObserver odom_hold_;
   Px4DataObserver ctrl_hold_;
   Px4DataObserver client_hold_;
 
   // Log suppression
   clock::time_point last_log_state_time_;
-  clock::time_point odom_low_log_time_;
-  uint32_t odom_low_suppressed_ = 0;
-  bool odom_low_active_ = false;
+  LogSuppressor odom_hz_suppressor_{2000};
 
   // State
   bool ok_ = true;
-  bool was_failsafe_ = false;
 };
 
 } // namespace px4ctrl

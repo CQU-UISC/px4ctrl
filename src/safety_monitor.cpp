@@ -4,6 +4,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "fsm_internal.h"
+
 namespace px4ctrl {
 
 SafetyMonitor::SafetyMonitor(std::shared_ptr<Context> ctx)
@@ -95,26 +97,10 @@ SafetyMonitor::Result SafetyMonitor::evaluate(const MissionContextSnapshot &snap
 
     // 7. Attitude fence
     if (ctx_->params()->guard_params.enable_attitude_fence) {
-      // inline quatToRpyDeg
-      const Eigen::Quaterniond qn = q.normalized();
-      const double sinr_cosp = 2.0 * (qn.w() * qn.x() + qn.y() * qn.z());
-      const double cosr_cosp = 1.0 - 2.0 * (qn.x() * qn.x() + qn.y() * qn.y());
-      const double roll = std::atan2(sinr_cosp, cosr_cosp);
-      const double sinp = 2.0 * (qn.w() * qn.y() - qn.z() * qn.x());
-      constexpr double kHalfPi = 1.5707963267948966;
-      const double pitch =
-          (std::abs(sinp) >= 1.0) ? std::copysign(kHalfPi, sinp) : std::asin(sinp);
-      const double siny_cosp = 2.0 * (qn.w() * qn.z() + qn.x() * qn.y());
-      const double cosy_cosp = 1.0 - 2.0 * (qn.y() * qn.y() + qn.z() * qn.z());
-      const double yaw = std::atan2(siny_cosp, cosy_cosp);
-      constexpr double kRadToDeg = 57.29577951308232;
-
-      auto norm_deg = [](double rad) {
-        return std::atan2(std::sin(rad), std::cos(rad)) * kRadToDeg;
-      };
-      const double roll_deg = std::abs(norm_deg(roll));
-      const double pitch_deg = std::abs(norm_deg(pitch));
-      const double yaw_deg = std::abs(norm_deg(yaw));
+      const auto rpy = fsm_internal::quatToRpyDeg(q);
+      const double roll_deg = std::abs(rpy[0]);
+      const double pitch_deg = std::abs(rpy[1]);
+      const double yaw_deg = std::abs(rpy[2]);
 
       auto over_limit = [](double angle_deg, double limit_deg) {
         return limit_deg != -1.0 && angle_deg > limit_deg;

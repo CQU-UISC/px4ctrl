@@ -61,11 +61,18 @@ Control selection in FSM:
 - `PROOF_ALIVE` output when essential inputs are not ready.
 
 ## Repository Layout
-- `src/fsm.cpp`: main runtime loop, context build, process orchestration.
-- `src/fsm_guard.cpp`: guard evaluation, phase transitions, phase-entry handlers.
-- `src/fsm_control.cpp`: setpoint/control command builders and control publishing.
-- `src/fsm_client.cpp`: client command handling and telemetry payload fill.
-- `src/fsm_internal.h`: shared FSM helper constants and utility functions.
+- `src/coordinator.cpp`: main mission coordinator, FSM orchestration, safety dispatch, control output.
+- `src/mission_fsm.h` / `src/mission_fsm.cpp`: finite state machine (Standby → Takeoff → Hover → CmdCtrl → Landing → Failsafe).
+- `src/safety_monitor.h` / `src/safety_monitor.cpp`: guard evaluation with bitmask flags.
+- `src/command_builder.cpp`: builds control commands (attitude/bodyrates/proof-of-life) for each phase.
+- `src/client_handler.cpp`: handles client commands (arm, takeoff, land, hover, etc.).
+- `src/telemetry_builder.cpp`: builds telemetry payload for client display.
+- `src/bridge.cpp`: ROS 2 MAVROS bridge (subscribe/publish).
+- `src/controller.cpp`: SE3 geometric controller.
+- `src/context.h`: shared mission context and state snapshot.
+- `src/fsm_internal.h`: FSM helper constants and utility functions.
+- `src/server.cpp`: Zenoh server for client communication.
+- `src/params.h`: parameter loading and validation.
 
 ## Prerequisites
 - ROS 2 (same distro as your MAVROS setup)
@@ -106,6 +113,7 @@ Configuration files are in `config/`:
 - Transport params: `transport.json`
 
 Key guard fields in flight config:
+- `drone_id`: filter client commands by drone id (0 = accept any)
 - `use_rc`, `rc_timeout`, `rc_triggered`
 - `enable_geofence`, `geofence_min`, `geofence_max`, `geofence_triggered`
 - `enable_attitude_fence`, `max_roll_deg`, `max_pitch_deg`, `max_yaw_deg`, `attitude_triggered`

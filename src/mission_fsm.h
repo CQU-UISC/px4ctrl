@@ -80,6 +80,7 @@ inline void MissionFSM::ensure_hover_initialized(const MissionContextSnapshot &s
 // --- State: Standby ---
 struct Standby : MissionFSM {
   void entry() override {
+    ctx->last_phase = ctx->phase;
     ctx->takeoff.initialized = false;
     ctx->landing.initialized = false;
     ctx->phase = MissionPhase::STANDBY;
@@ -117,6 +118,7 @@ struct Takeoff : MissionFSM {
         ctx->takeoff.start_q = Eigen::Quaterniond::Identity();
       }
     }
+    ctx->last_phase = ctx->phase;
     ctx->takeoff.start_time = snap.now;
     ctx->takeoff.initialized = true;
     ctx->phase = MissionPhase::TAKEOFF;
@@ -144,6 +146,7 @@ struct Takeoff : MissionFSM {
 // --- State: Hover ---
 struct Hover_State : MissionFSM {
   void entry() override {
+    ctx->last_phase = ctx->phase;
     ctx->landing.initialized = false;
     ctx->landing.c12_started = false;
 
@@ -181,6 +184,7 @@ struct Hover_State : MissionFSM {
 // --- State: CmdCtrl ---
 struct CmdCtrl : MissionFSM {
   void entry() override {
+    ctx->last_phase = ctx->phase;
     ctx->landing.initialized = false;
     ctx->landing.c12_started = false;
 
@@ -218,6 +222,7 @@ struct CmdCtrl : MissionFSM {
 // --- State: Landing ---
 struct Landing : MissionFSM {
   void entry() override {
+    ctx->last_phase = ctx->phase;
     const auto snap = ctx->build_snapshot();
 
     if (snap.odom_msg != nullptr) {
@@ -254,6 +259,7 @@ struct Landing : MissionFSM {
     const auto elapsed_ms = timeDuration(ctx->landing.start_time, snap.now);
     if (elapsed_ms > ctx->params()->guard_params.land_timeout) {
       spdlog::warn("Landing timeout reached, forcing disarm path");
+      ctx->pending_disarm = true;
       transit<Standby>();
       return;
     }
@@ -278,7 +284,8 @@ struct Landing : MissionFSM {
         ctx->landing.c12_started = true;
       }
       if (timeDuration(ctx->landing.c12_reached_time, snap.now) > tc) {
-        spdlog::info("Successfully landed");
+        spdlog::info("Successfully landed, disarming");
+        ctx->pending_disarm = true;
         transit<Standby>();
       }
     } else {
@@ -290,6 +297,7 @@ struct Landing : MissionFSM {
 // --- State: Failsafe ---
 struct Failsafe : MissionFSM {
   void entry() override {
+    ctx->last_phase = ctx->phase;
     const auto snap = ctx->build_snapshot();
     ctx->phase = MissionPhase::FAILSAFE;
 
@@ -322,11 +330,44 @@ struct Failsafe : MissionFSM {
       return;
     }
 
-    if (ctx->landing.initialized &&
-        timeDuration(ctx->landing.start_time, snap.now) >
-            ctx->params()->guard_params.land_timeout) {
+    if (!ctx->landing.initialized) return;
+
+    const auto elapsed_ms = timeDuration(ctx->landing.start_time, snap.now);
+
+    // Landing timeout
+    if (elapsed_ms > ctx->params()->guard_params.land_timeout) {
       spdlog::warn("Failsafe landing timeout reached, force disarm");
+      ctx->pending_disarm = true;
       transit<Standby>();
+      return;
+    }
+
+    if (snap.odom_msg == nullptr || !snap.odom_fresh) return;
+
+    const double speed = ctx->params()->statemachine_params.l2_takeoff_landing_speed;
+    const double des_z = ctx->landing.start_pos.z() - speed * (elapsed_ms / 1000.0);
+    const Eigen::Vector3d vel(snap.odom_msg->twist.twist.linear.x,
+                               snap.odom_msg->twist.twist.linear.y,
+                               snap.odom_msg->twist.twist.linear.z);
+
+    const double c = ctx->params()->statemachine_params.l2_land_position_deviation_c;
+    const double vc = ctx->params()->statemachine_params.l2_land_velocity_thr_c;
+    const double tc = ctx->params()->statemachine_params.l2_land_time_keep_c;
+
+    const bool c12 = (des_z - snap.odom_msg->pose.pose.position.z) < c && vel.norm() < vc;
+
+    if (c12) {
+      if (!ctx->landing.c12_started) {
+        ctx->landing.c12_reached_time = snap.now;
+        ctx->landing.c12_started = true;
+      }
+      if (timeDuration(ctx->landing.c12_reached_time, snap.now) > tc) {
+        spdlog::info("Failsafe landing completed, disarming");
+        ctx->pending_disarm = true;
+        transit<Standby>();
+      }
+    } else {
+      ctx->landing.c12_started = false;
     }
   }
 
